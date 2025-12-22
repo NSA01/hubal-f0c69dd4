@@ -74,36 +74,18 @@ const DesignerOffers = () => {
                 {availableDesigns.map((design) => (
                   <Card key={design.id}>
                     <CardContent className="p-4">
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">الصورة الأصلية</p>
-                          <img
-                            src={design.original_image_url}
-                            alt="Original"
-                            className="w-full h-32 object-cover rounded-lg"
-                          />
+                      <div className="flex gap-4 mb-4">
+                        <img
+                          src={design.original_image_url}
+                          alt="Room"
+                          className="w-32 h-32 object-cover rounded-lg"
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium mb-2">متطلبات العميل:</p>
+                          <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg line-clamp-4">
+                            {design.prompt}
+                          </p>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">التصميم المقترح</p>
-                          {design.generated_image_url ? (
-                            <img
-                              src={design.generated_image_url}
-                              alt="Generated"
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                          ) : (
-                            <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
-                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mb-4">
-                        <p className="text-sm font-medium mb-1">متطلبات العميل:</p>
-                        <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
-                          {design.prompt}
-                        </p>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -224,29 +206,13 @@ const DesignerOffers = () => {
           </DialogHeader>
           {selectedDesign && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">الصورة الأصلية</p>
-                  <img
-                    src={selectedDesign.original_image_url}
-                    alt="Original"
-                    className="w-full rounded-lg"
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">التصميم المقترح</p>
-                  {selectedDesign.generated_image_url ? (
-                    <img
-                      src={selectedDesign.generated_image_url}
-                      alt="Generated"
-                      className="w-full rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
-                      <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">صورة الغرفة</p>
+                <img
+                  src={selectedDesign.original_image_url}
+                  alt="Room"
+                  className="w-full rounded-lg"
+                />
               </div>
               <div>
                 <p className="font-medium mb-2">متطلبات العميل:</p>
