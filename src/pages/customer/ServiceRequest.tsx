@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BottomNav } from '@/components/ui/BottomNav';
-import { designers } from '@/data/mockData';
+import { useDesigner } from '@/hooks/useDesigners';
+import { useCreateServiceRequest } from '@/hooks/useServiceRequests';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { PROPERTY_TYPES, CITIES, BUDGET_RANGES } from '@/types';
 
 export default function ServiceRequest() {
   const { designerId } = useParams<{ designerId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   
-  const designer = designers.find((d) => d.id === designerId);
-  
+  const { data: designer, isLoading } = useDesigner(designerId || '');
+  const createRequest = useCreateServiceRequest();
   const [formData, setFormData] = useState({
     propertyType: '' as keyof typeof PROPERTY_TYPES | '',
     city: '',
@@ -20,6 +23,14 @@ export default function ServiceRequest() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="page-container flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!designer) {
     return (
@@ -37,13 +48,29 @@ export default function ServiceRequest() {
       return;
     }
 
+    if (!user) {
+      toast.error('يجب تسجيل الدخول أولاً');
+      return;
+    }
+
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    toast.success('تم إرسال الطلب بنجاح');
-    navigate('/customer/requests');
+    try {
+      await createRequest.mutateAsync({
+        designer_id: designer.id,
+        property_type: formData.propertyType,
+        city: formData.city,
+        budget: Number(formData.budget),
+        description: formData.description,
+      });
+      
+      toast.success('تم إرسال الطلب بنجاح');
+      navigate('/customer/requests');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إرسال الطلب');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -56,7 +83,7 @@ export default function ServiceRequest() {
         <div>
           <h1 className="text-xl font-bold text-foreground">طلب خدمة</h1>
           <p className="text-sm text-muted-foreground">
-            {designer.businessName || designer.name}
+            {designer.business_name || designer.name}
           </p>
         </div>
       </header>
