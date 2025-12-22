@@ -2,34 +2,51 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { RequestCard } from '@/components/RequestCard';
-import { serviceRequests } from '@/data/mockData';
-import { ServiceRequest } from '@/types';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useMyDesignerProfile } from '@/hooks/useDesigners';
+import { useDesignerRequests, useUpdateRequestStatus } from '@/hooks/useServiceRequests';
+import { Loader2 } from 'lucide-react';
 
 export default function DesignerRequests() {
-  const [requests, setRequests] = useState<ServiceRequest[]>(
-    serviceRequests.filter((r) => r.designerId === '1')
-  );
+  const { user } = useAuthContext();
+  const { data: designer, isLoading: loadingDesigner } = useMyDesignerProfile(user?.id);
+  const { data: requests = [], isLoading: loadingRequests } = useDesignerRequests(designer?.id);
+  const updateStatus = useUpdateRequestStatus();
 
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted'>('all');
 
-  const handleAccept = (id: string) => {
-    setRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: 'accepted' as const } : r))
-    );
-    toast.success('تم قبول الطلب');
+  const handleAccept = async (id: string) => {
+    try {
+      await updateStatus.mutateAsync({ id, status: 'accepted' });
+      toast.success('تم قبول الطلب');
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
   };
 
-  const handleReject = (id: string) => {
-    setRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: 'rejected' as const } : r))
-    );
-    toast.info('تم رفض الطلب');
+  const handleReject = async (id: string) => {
+    try {
+      await updateStatus.mutateAsync({ id, status: 'rejected' });
+      toast.info('تم رفض الطلب');
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
   };
 
   const filteredRequests = requests.filter((r) => {
     if (filter === 'all') return true;
     return r.status === filter;
   });
+
+  const isLoading = loadingDesigner || loadingRequests;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-hero)' }}>
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
@@ -51,10 +68,10 @@ export default function DesignerRequests() {
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key as typeof filter)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               filter === tab.key
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-secondary text-secondary-foreground hover:bg-primary/10'
             }`}
           >
             {tab.label}
@@ -68,11 +85,21 @@ export default function DesignerRequests() {
           {filteredRequests.map((request, idx) => (
             <div
               key={request.id}
-              style={{ animationDelay: `${idx * 0.1}s` }}
+              className="animate-slide-up"
+              style={{ animationDelay: `${idx * 0.05}s` }}
             >
               <RequestCard
-                request={request}
-                showActions
+                request={{
+                  id: request.id,
+                  customerName: request.customer_name || 'عميل',
+                  city: request.city,
+                  propertyType: request.property_type,
+                  budget: request.budget,
+                  description: request.description || '',
+                  status: request.status,
+                  createdAt: request.created_at,
+                }}
+                showActions={request.status === 'pending'}
                 onAccept={handleAccept}
                 onReject={handleReject}
               />

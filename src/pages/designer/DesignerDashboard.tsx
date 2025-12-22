@@ -1,18 +1,17 @@
-import { useAuthStore } from '@/store/authStore';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { BottomNav } from '@/components/ui/BottomNav';
-import { FileText, CheckCircle, Clock, Star } from 'lucide-react';
-import { serviceRequests, designers } from '@/data/mockData';
+import { FileText, CheckCircle, Clock, Star, Loader2 } from 'lucide-react';
+import { useMyDesignerProfile } from '@/hooks/useDesigners';
+import { useDesignerRequests } from '@/hooks/useServiceRequests';
 
 export default function DesignerDashboard() {
-  const { user } = useAuthStore();
+  const { user } = useAuthContext();
+  const { data: designer, isLoading: loadingDesigner } = useMyDesignerProfile(user?.id);
+  const { data: requests = [], isLoading: loadingRequests } = useDesignerRequests(designer?.id);
   
-  // Get designer's stats
-  const designerRequests = serviceRequests.filter((r) => r.designerId === '1');
-  const pendingCount = designerRequests.filter((r) => r.status === 'pending').length;
-  const activeCount = designerRequests.filter((r) => r.status === 'accepted').length;
-  const completedCount = designerRequests.filter((r) => r.status === 'completed').length;
-  
-  const designer = designers[0];
+  const pendingCount = requests.filter((r) => r.status === 'pending').length;
+  const activeCount = requests.filter((r) => r.status === 'accepted').length;
+  const completedCount = requests.filter((r) => r.status === 'completed').length;
 
   const stats = [
     {
@@ -39,11 +38,21 @@ export default function DesignerDashboard() {
     {
       icon: Star,
       label: 'متوسط التقييم',
-      value: designer.rating,
+      value: designer?.rating ? Number(designer.rating).toFixed(1) : '0',
       color: 'text-warning',
       bgColor: 'bg-warning/10',
     },
   ];
+
+  const isLoading = loadingDesigner || loadingRequests;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-hero)' }}>
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
@@ -51,7 +60,7 @@ export default function DesignerDashboard() {
       <header className="mb-8 animate-fade-in">
         <p className="text-muted-foreground mb-1">مرحبًا،</p>
         <h1 className="text-2xl font-bold text-foreground">
-          {user?.name || designer.name}
+          {user?.user_metadata?.name || designer?.business_name || user?.email?.split('@')[0]}
         </h1>
       </header>
 
@@ -75,10 +84,10 @@ export default function DesignerDashboard() {
       </section>
 
       {/* Quick Actions */}
-      <section className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
-        <h2 className="section-title">إجراءات سريعة</h2>
-        <div className="space-y-3">
-          <div className="card-premium p-4 bg-primary/5">
+      {pendingCount > 0 && (
+        <section className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
+          <h2 className="section-title">إجراءات سريعة</h2>
+          <div className="card-premium p-4 bg-gradient-to-br from-primary/5 to-transparent">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Clock className="w-5 h-5 text-primary" />
@@ -93,30 +102,36 @@ export default function DesignerDashboard() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Recent Activity */}
-      <section className="mt-8 animate-slide-up" style={{ animationDelay: '0.5s' }}>
-        <h2 className="section-title">النشاط الأخير</h2>
-        <div className="card-premium p-4">
-          <div className="space-y-4">
-            {designerRequests.slice(0, 3).map((request) => (
-              <div key={request.id} className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                <div className="flex-1">
-                  <p className="text-sm text-foreground">
-                    طلب جديد من {request.customerName}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {request.city} - {new Date(request.createdAt).toLocaleDateString('ar-SA')}
-                  </p>
+      {requests.length > 0 && (
+        <section className="mt-8 animate-slide-up" style={{ animationDelay: '0.5s' }}>
+          <h2 className="section-title">النشاط الأخير</h2>
+          <div className="card-premium p-4">
+            <div className="space-y-4">
+              {requests.slice(0, 3).map((request) => (
+                <div key={request.id} className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${
+                    request.status === 'pending' ? 'bg-warning' :
+                    request.status === 'accepted' ? 'bg-primary' :
+                    request.status === 'completed' ? 'bg-success' : 'bg-muted'
+                  }`} />
+                  <div className="flex-1">
+                    <p className="text-sm text-foreground">
+                      طلب جديد من {request.customer_name || 'عميل'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {request.city} - {new Date(request.created_at).toLocaleDateString('ar-SA')}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <BottomNav />
     </div>

@@ -178,6 +178,10 @@
     @apply text-primary;
   }
 
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+  }
+
   .stat-card {
     @apply card-premium p-4 flex flex-col items-center justify-center text-center gap-2;
   }

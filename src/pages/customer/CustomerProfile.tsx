@@ -1,14 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { User, MapPin, Mail, LogOut, ChevronLeft } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { BottomNav } from '@/components/ui/BottomNav';
 
 export default function CustomerProfile() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, signOut } = useAuthContext();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate('/');
   };
 
@@ -31,17 +31,11 @@ export default function CustomerProfile() {
             <User className="w-10 h-10 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">{user?.name}</h2>
+            <h2 className="text-xl font-bold text-foreground">{user?.user_metadata?.name || user?.email?.split('@')[0]}</h2>
             <div className="flex items-center gap-1 text-muted-foreground mt-1">
               <Mail className="w-4 h-4" />
               <span className="text-sm">{user?.email}</span>
             </div>
-            {user?.city && (
-              <div className="flex items-center gap-1 text-muted-foreground mt-1">
-                <MapPin className="w-4 h-4" />
-                <span className="text-sm">{user.city}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>

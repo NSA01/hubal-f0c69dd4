@@ -12,16 +12,8 @@ export interface ServiceRequest {
   status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
   created_at: string;
   updated_at: string;
-  customer_profile?: {
-    name: string;
-    avatar_url: string | null;
-  };
-  designer?: {
-    business_name: string | null;
-    profile?: {
-      name: string;
-    };
-  };
+  customer_name?: string;
+  designer_name?: string;
 }
 
 export function useCustomerRequests(customerId?: string) {
@@ -32,18 +24,44 @@ export function useCustomerRequests(customerId?: string) {
       
       const { data, error } = await supabase
         .from('service_requests')
-        .select(`
-          *,
-          designer:designers(
-            business_name,
-            profile:profiles!designers_user_id_fkey(name)
-          )
-        `)
+        .select('*')
         .eq('customer_id', customerId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as ServiceRequest[];
+
+      // Fetch designer info
+      const requests = data || [];
+      const designerIds = [...new Set(requests.map(r => r.designer_id))];
+      
+      if (designerIds.length > 0) {
+        const { data: designers } = await supabase
+          .from('designers')
+          .select('id, business_name, user_id')
+          .in('id', designerIds);
+
+        const userIds = designers?.map(d => d.user_id) || [];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+        const designerMap = new Map(designers?.map(d => [d.id, {
+          name: profileMap.get(d.user_id)?.name || d.business_name || 'مصمم'
+        }]) || []);
+
+        return requests.map(r => ({
+          ...r,
+          status: r.status as ServiceRequest['status'],
+          designer_name: designerMap.get(r.designer_id)?.name,
+        })) as ServiceRequest[];
+      }
+
+      return requests.map(r => ({
+        ...r,
+        status: r.status as ServiceRequest['status'],
+      })) as ServiceRequest[];
     },
     enabled: !!customerId,
   });
@@ -57,15 +75,35 @@ export function useDesignerRequests(designerId?: string) {
       
       const { data, error } = await supabase
         .from('service_requests')
-        .select(`
-          *,
-          customer_profile:profiles!service_requests_customer_id_fkey(name, avatar_url)
-        `)
+        .select('*')
         .eq('designer_id', designerId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as ServiceRequest[];
+
+      // Fetch customer profiles
+      const requests = data || [];
+      const customerIds = [...new Set(requests.map(r => r.customer_id))];
+      
+      if (customerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name')
+          .in('user_id', customerIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+        return requests.map(r => ({
+          ...r,
+          status: r.status as ServiceRequest['status'],
+          customer_name: profileMap.get(r.customer_id)?.name || 'عميل',
+        })) as ServiceRequest[];
+      }
+
+      return requests.map(r => ({
+        ...r,
+        status: r.status as ServiceRequest['status'],
+      })) as ServiceRequest[];
     },
     enabled: !!designerId,
   });

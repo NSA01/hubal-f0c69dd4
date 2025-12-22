@@ -16,10 +16,8 @@ export interface Designer {
   is_verified: boolean;
   is_active: boolean;
   created_at: string;
-  profile?: {
-    name: string;
-    avatar_url: string | null;
-  };
+  name?: string;
+  avatar_url?: string | null;
 }
 
 export function useDesigners(filters?: { city?: string; minBudget?: number; maxBudget?: number }) {
@@ -28,10 +26,7 @@ export function useDesigners(filters?: { city?: string; minBudget?: number; maxB
     queryFn: async () => {
       let query = supabase
         .from('designers')
-        .select(`
-          *,
-          profile:profiles!designers_user_id_fkey(name, avatar_url)
-        `)
+        .select('*')
         .eq('is_active', true);
 
       if (filters?.city && filters.city !== 'all') {
@@ -49,7 +44,27 @@ export function useDesigners(filters?: { city?: string; minBudget?: number; maxB
       const { data, error } = await query.order('rating', { ascending: false });
 
       if (error) throw error;
-      return data as Designer[];
+
+      // Fetch profiles for each designer
+      const designers = data || [];
+      const userIds = designers.map(d => d.user_id);
+      
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name, avatar_url')
+          .in('user_id', userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+        
+        return designers.map(d => ({
+          ...d,
+          name: profileMap.get(d.user_id)?.name || d.business_name || 'مصمم',
+          avatar_url: profileMap.get(d.user_id)?.avatar_url,
+        })) as Designer[];
+      }
+
+      return designers as Designer[];
     },
   });
 }
@@ -60,15 +75,25 @@ export function useDesigner(id: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('designers')
-        .select(`
-          *,
-          profile:profiles!designers_user_id_fkey(name, avatar_url)
-        `)
+        .select('*')
         .eq('id', id)
         .maybeSingle();
 
       if (error) throw error;
-      return data as Designer | null;
+      if (!data) return null;
+
+      // Fetch profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, avatar_url')
+        .eq('user_id', data.user_id)
+        .maybeSingle();
+
+      return {
+        ...data,
+        name: profile?.name || data.business_name || 'مصمم',
+        avatar_url: profile?.avatar_url,
+      } as Designer;
     },
     enabled: !!id,
   });

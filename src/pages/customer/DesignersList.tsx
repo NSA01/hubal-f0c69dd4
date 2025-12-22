@@ -1,12 +1,34 @@
 import { useState, useMemo } from 'react';
-import { ArrowRight, Filter, SlidersHorizontal } from 'lucide-react';
+import { ArrowRight, Filter, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DesignerCard } from '@/components/DesignerCard';
 import { BottomNav } from '@/components/ui/BottomNav';
-import { designers } from '@/data/mockData';
+import { useDesigners, Designer } from '@/hooks/useDesigners';
 import { CITIES, BUDGET_RANGES } from '@/types';
 
 type SortOption = 'rating' | 'reviews';
+
+// Adapter to convert database designer to card format
+function adaptDesigner(d: Designer) {
+  return {
+    id: d.id,
+    user_id: d.user_id,
+    name: d.name || d.business_name || 'مصمم',
+    business_name: d.business_name,
+    city: d.city,
+    rating: Number(d.rating) || 0,
+    review_count: d.review_count || 0,
+    min_budget: d.min_budget,
+    max_budget: d.max_budget,
+    avatar_url: d.avatar_url,
+    services: d.services || [],
+    portfolio_images: d.portfolio_images || [],
+    bio: d.bio,
+    is_verified: d.is_verified,
+    is_active: d.is_active,
+    created_at: d.created_at,
+  };
+}
 
 export default function DesignersList() {
   const [cityFilter, setCityFilter] = useState<string>('');
@@ -14,8 +36,10 @@ export default function DesignersList() {
   const [sortBy, setSortBy] = useState<SortOption>('rating');
   const [showFilters, setShowFilters] = useState(false);
 
+  const { data: designers = [], isLoading, error } = useDesigners();
+
   const filteredDesigners = useMemo(() => {
-    let result = [...designers];
+    let result = designers.map(adaptDesigner);
 
     if (cityFilter) {
       result = result.filter((d) => d.city === cityFilter);
@@ -24,24 +48,32 @@ export default function DesignersList() {
     if (budgetFilter !== null) {
       const range = BUDGET_RANGES[budgetFilter];
       result = result.filter(
-        (d) => d.budgetMin <= range.max && d.budgetMax >= range.min
+        (d) => d.min_budget <= range.max && d.max_budget >= range.min
       );
     }
 
     if (sortBy === 'rating') {
       result.sort((a, b) => b.rating - a.rating);
     } else {
-      result.sort((a, b) => b.reviewsCount - a.reviewsCount);
+      result.sort((a, b) => b.review_count - a.review_count);
     }
 
     return result;
-  }, [cityFilter, budgetFilter, sortBy]);
+  }, [designers, cityFilter, budgetFilter, sortBy]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-hero)' }}>
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="page-container">
       {/* Header */}
-      <header className="flex items-center gap-4 mb-6">
-        <Link to="/customer" className="p-2 -mr-2">
+      <header className="flex items-center gap-4 mb-6 animate-fade-in">
+        <Link to="/customer" className="p-2 -mr-2 hover:bg-secondary rounded-xl transition-colors">
           <ArrowRight className="w-6 h-6 text-foreground" />
         </Link>
         <div>
@@ -55,7 +87,9 @@ export default function DesignersList() {
       {/* Filter Toggle */}
       <button
         onClick={() => setShowFilters(!showFilters)}
-        className="w-full btn-secondary mb-4 flex items-center justify-center gap-2"
+        className={`w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+          showFilters ? 'bg-primary text-primary-foreground' : 'btn-secondary'
+        }`}
       >
         <Filter className="w-5 h-5" />
         <span>الفلاتر والترتيب</span>
@@ -113,20 +147,20 @@ export default function DesignersList() {
             <div className="flex gap-2">
               <button
                 onClick={() => setSortBy('rating')}
-                className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors ${
+                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${
                   sortBy === 'rating'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-secondary text-secondary-foreground hover:bg-primary/10'
                 }`}
               >
                 الأعلى تقييمًا
               </button>
               <button
                 onClick={() => setSortBy('reviews')}
-                className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors ${
+                className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${
                   sortBy === 'reviews'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-secondary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-secondary text-secondary-foreground hover:bg-primary/10'
                 }`}
               >
                 الأكثر تقييمًا
@@ -142,24 +176,31 @@ export default function DesignersList() {
       </p>
 
       {/* Designers List */}
-      <div className="space-y-4">
-        {filteredDesigners.map((designer, idx) => (
-          <div
-            key={designer.id}
-            style={{ animationDelay: `${idx * 0.05}s` }}
-          >
-            <DesignerCard designer={designer} />
-          </div>
-        ))}
+      {error ? (
+        <div className="text-center py-16">
+          <p className="text-muted-foreground">حدث خطأ في تحميل المصممين</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredDesigners.map((designer, idx) => (
+            <div
+              key={designer.id}
+              className="animate-slide-up"
+              style={{ animationDelay: `${idx * 0.05}s` }}
+            >
+              <DesignerCard designer={designer} />
+            </div>
+          ))}
 
-        {filteredDesigners.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              لا يوجد مصممين يطابقون معايير البحث
-            </p>
-          </div>
-        )}
-      </div>
+          {filteredDesigners.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                لا يوجد مصممين متاحين حالياً
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       <BottomNav />
     </div>
