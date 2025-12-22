@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Plus, X, Camera, Check, Loader2 } from 'lucide-react';
+import { Plus, X, Camera, Check, Loader2, Trash2 } from 'lucide-react';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { CITIES, BUDGET_RANGES } from '@/types';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -20,6 +20,12 @@ export default function DesignerProfileEdit() {
   const { user, signOut } = useAuthContext();
   const { data: designer, isLoading } = useMyDesignerProfile(user?.id);
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
+  
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const portfolioInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingPortfolio, setUploadingPortfolio] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -59,8 +65,126 @@ export default function DesignerProfileEdit() {
         budgetMax: designer.max_budget || 50000,
         services: designer.services || [],
       });
+      setPortfolioImages(designer.portfolio_images || []);
     }
   }, [designer, profile]);
+
+  // Upload image to storage
+  const uploadImage = async (file: File, folder: 'avatar' | 'portfolio'): Promise<string | null> => {
+    if (!user?.id) return null;
+    
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${folder}/${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('designer-images')
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('designer-images')
+      .getPublicUrl(fileName);
+
+    return publicUrl;
+  };
+
+  // Handle avatar upload
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const publicUrl = await uploadImage(file, 'avatar');
+      if (!publicUrl) throw new Error('Failed to get URL');
+
+      // Update profile with new avatar
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, avatar_url: publicUrl } : null);
+      toast.success('تم تحديث الصورة الشخصية');
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast.error('حدث خطأ أثناء رفع الصورة');
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
+  // Handle portfolio upload
+  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id || !designer?.id) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+      return;
+    }
+
+    setUploadingPortfolio(true);
+    try {
+      const publicUrl = await uploadImage(file, 'portfolio');
+      if (!publicUrl) throw new Error('Failed to get URL');
+
+      const newImages = [...portfolioImages, publicUrl];
+      
+      // Update designer portfolio
+      const { error } = await supabase
+        .from('designers')
+        .update({ portfolio_images: newImages })
+        .eq('id', designer.id);
+
+      if (error) throw error;
+
+      setPortfolioImages(newImages);
+      queryClient.invalidateQueries({ queryKey: ['my-designer-profile'] });
+      toast.success('تم إضافة الصورة للمعرض');
+    } catch (error) {
+      console.error('Portfolio upload error:', error);
+      toast.error('حدث خطأ أثناء رفع الصورة');
+    } finally {
+      setUploadingPortfolio(false);
+      if (portfolioInputRef.current) portfolioInputRef.current.value = '';
+    }
+  };
+
+  // Remove portfolio image
+  const handleRemovePortfolioImage = async (imageUrl: string, index: number) => {
+    if (!designer?.id) return;
+
+    try {
+      const newImages = portfolioImages.filter((_, i) => i !== index);
+      
+      const { error } = await supabase
+        .from('designers')
+        .update({ portfolio_images: newImages })
+        .eq('id', designer.id);
+
+      if (error) throw error;
+
+      setPortfolioImages(newImages);
+      queryClient.invalidateQueries({ queryKey: ['my-designer-profile'] });
+      toast.success('تم حذف الصورة');
+    } catch (error) {
+      console.error('Remove image error:', error);
+      toast.error('حدث خطأ أثناء حذف الصورة');
+    }
+  };
 
   // Calculate profile completion percentage
   const completionPercentage = useMemo(() => {
@@ -74,7 +198,7 @@ export default function DesignerProfileEdit() {
       { value: formData.services.length >= 1, weight: 15 },
       { value: formData.services.length >= 3, weight: 10 },
       { value: profile?.avatar_url, weight: 10 },
-      { value: designer.portfolio_images?.length >= 1, weight: 10 },
+      { value: portfolioImages.length >= 1, weight: 10 },
     ];
 
     const completed = fields.reduce((acc, field) => {
@@ -82,7 +206,7 @@ export default function DesignerProfileEdit() {
     }, 0);
 
     return Math.min(100, completed);
-  }, [formData, designer, profile]);
+  }, [formData, designer, profile, portfolioImages]);
 
   // Get completion status text and color
   const completionStatus = useMemo(() => {
@@ -173,6 +297,22 @@ export default function DesignerProfileEdit() {
 
   return (
     <div className="page-container pb-32">
+      {/* Hidden file inputs */}
+      <input
+        ref={avatarInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={handleAvatarUpload}
+        className="hidden"
+      />
+      <input
+        ref={portfolioInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={handlePortfolioUpload}
+        className="hidden"
+      />
+
       {/* Header */}
       <header className="mb-6 animate-fade-in">
         <h1 className="text-2xl font-bold text-foreground">ملفي الشخصي</h1>
@@ -214,7 +354,7 @@ export default function DesignerProfileEdit() {
               {!profile?.avatar_url ? (
                 <span className="text-xs bg-muted px-2 py-1 rounded-md">أضف صورة شخصية</span>
               ) : null}
-              {!designer.portfolio_images?.length ? (
+              {portfolioImages.length < 1 ? (
                 <span className="text-xs bg-muted px-2 py-1 rounded-md">أضف أعمال للمعرض</span>
               ) : null}
             </div>
@@ -238,8 +378,16 @@ export default function DesignerProfileEdit() {
               </span>
             </div>
           )}
-          <button className="absolute -bottom-2 -left-2 w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors">
-            <Camera className="w-5 h-5 text-primary-foreground" />
+          <button 
+            onClick={() => avatarInputRef.current?.click()}
+            disabled={uploadingAvatar}
+            className="absolute -bottom-2 -left-2 w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {uploadingAvatar ? (
+              <Loader2 className="w-5 h-5 text-primary-foreground animate-spin" />
+            ) : (
+              <Camera className="w-5 h-5 text-primary-foreground" />
+            )}
           </button>
           {completionPercentage === 100 && (
             <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
@@ -377,19 +525,34 @@ export default function DesignerProfileEdit() {
         {/* Portfolio */}
         <div className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
           <label className="block text-sm font-medium text-foreground mb-2">
-            معرض الأعمال ({designer.portfolio_images?.length || 0})
+            معرض الأعمال ({portfolioImages.length})
           </label>
           <div className="grid grid-cols-3 gap-2">
-            {designer.portfolio_images?.map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`عمل ${idx + 1}`}
-                className="w-full aspect-square object-cover rounded-xl"
-              />
+            {portfolioImages.map((img, idx) => (
+              <div key={idx} className="relative group">
+                <img
+                  src={img}
+                  alt={`عمل ${idx + 1}`}
+                  className="w-full aspect-square object-cover rounded-xl"
+                />
+                <button
+                  onClick={() => handleRemovePortfolioImage(img, idx)}
+                  className="absolute top-1 right-1 w-7 h-7 rounded-lg bg-destructive/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 className="w-4 h-4 text-white" />
+                </button>
+              </div>
             ))}
-            <button className="w-full aspect-square rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-card hover:border-primary/50 transition-colors">
-              <Plus className="w-8 h-8 text-muted-foreground" />
+            <button 
+              onClick={() => portfolioInputRef.current?.click()}
+              disabled={uploadingPortfolio}
+              className="w-full aspect-square rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-card hover:border-primary/50 transition-colors disabled:opacity-50"
+            >
+              {uploadingPortfolio ? (
+                <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+              ) : (
+                <Plus className="w-8 h-8 text-muted-foreground" />
+              )}
             </button>
           </div>
         </div>
