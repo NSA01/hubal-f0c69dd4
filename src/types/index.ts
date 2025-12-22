@@ -24,14 +24,15 @@ export interface Review {
 
 export interface ServiceRequest {
   id: string;
-  customerId: string;
+  customerId?: string;
   customerName: string;
   designerId?: string;
-  propertyType: 'apartment' | 'villa' | 'commercial';
+  designerName?: string;
+  propertyType: string;
   budget: number;
   description: string;
   city: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'completed';
+  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
   createdAt: string;
 }
 
@@ -43,10 +44,13 @@ export interface Category {
   description: string;
 }
 
-export const PROPERTY_TYPES = {
+export const PROPERTY_TYPES: Record<string, string> = {
   apartment: 'شقة',
   villa: 'فيلا',
   commercial: 'تجاري',
+  شقة: 'شقة',
+  فيلا: 'فيلا',
+  تجاري: 'تجاري',
 } as const;
 
 export const CITIES = [

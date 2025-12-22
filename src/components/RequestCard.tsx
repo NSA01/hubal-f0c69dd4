@@ -8,28 +8,33 @@ interface RequestCardProps {
   onReject?: (id: string) => void;
 }
 
-const propertyIcons = {
+const propertyIcons: Record<string, typeof Home> = {
   apartment: Home,
   villa: Building2,
   commercial: Store,
+  شقة: Home,
+  فيلا: Building2,
+  تجاري: Store,
 };
 
-const statusStyles = {
+const statusStyles: Record<string, string> = {
   pending: 'bg-warning/10 text-warning',
   accepted: 'bg-success/10 text-success',
   rejected: 'bg-destructive/10 text-destructive',
   completed: 'bg-primary/10 text-primary',
+  cancelled: 'bg-muted text-muted-foreground',
 };
 
-const statusLabels = {
+const statusLabels: Record<string, string> = {
   pending: 'قيد الانتظار',
   accepted: 'مقبول',
   rejected: 'مرفوض',
   completed: 'مكتمل',
+  cancelled: 'ملغي',
 };
 
 export function RequestCard({ request, showActions = false, onAccept, onReject }: RequestCardProps) {
-  const PropertyIcon = propertyIcons[request.propertyType];
+  const PropertyIcon = propertyIcons[request.propertyType] || Home;
   
   const formatBudget = (budget: number) => {
     return new Intl.NumberFormat('ar-SA').format(budget) + ' ر.س';
@@ -44,7 +49,7 @@ export function RequestCard({ request, showActions = false, onAccept, onReject }
   };
 
   return (
-    <div className="card-premium p-4 animate-fade-in">
+    <div className="card-premium p-4">
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div>
@@ -54,8 +59,8 @@ export function RequestCard({ request, showActions = false, onAccept, onReject }
             <span>{formatDate(request.createdAt)}</span>
           </div>
         </div>
-        <span className={`badge-status ${statusStyles[request.status]}`}>
-          {statusLabels[request.status]}
+        <span className={`badge-status ${statusStyles[request.status] || statusStyles.pending}`}>
+          {statusLabels[request.status] || request.status}
         </span>
       </div>
 
@@ -65,7 +70,7 @@ export function RequestCard({ request, showActions = false, onAccept, onReject }
           <PropertyIcon className="w-4 h-4 text-primary" />
           <span className="text-muted-foreground">نوع العقار:</span>
           <span className="font-medium text-foreground">
-            {PROPERTY_TYPES[request.propertyType]}
+            {PROPERTY_TYPES[request.propertyType] || request.propertyType}
           </span>
         </div>
         
@@ -81,9 +86,11 @@ export function RequestCard({ request, showActions = false, onAccept, onReject }
       </div>
 
       {/* Description */}
-      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-        {request.description}
-      </p>
+      {request.description && (
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+          {request.description}
+        </p>
+      )}
 
       {/* Actions */}
       {showActions && request.status === 'pending' && (
