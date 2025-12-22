@@ -191,27 +191,38 @@ export function useCreateConversation() {
     mutationFn: async ({
       serviceRequestId,
       designerId,
+      customerId,
     }: {
-      serviceRequestId: string;
+      serviceRequestId?: string;
       designerId: string;
+      customerId?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Check if conversation already exists
-      const { data: existing } = await supabase
+      // Determine customer_id - either passed in or current user
+      const customerIdToUse = customerId || user.id;
+
+      // Check if conversation already exists for this designer and customer
+      let query = supabase
         .from('conversations')
         .select('*')
-        .eq('service_request_id', serviceRequestId)
-        .single();
+        .eq('designer_id', designerId)
+        .eq('customer_id', customerIdToUse);
+
+      if (serviceRequestId) {
+        query = query.eq('service_request_id', serviceRequestId);
+      }
+
+      const { data: existing } = await query.maybeSingle();
 
       if (existing) return existing;
 
       const { data, error } = await supabase
         .from('conversations')
         .insert({
-          service_request_id: serviceRequestId,
-          customer_id: user.id,
+          service_request_id: serviceRequestId || null,
+          customer_id: customerIdToUse,
           designer_id: designerId,
         })
         .select()
