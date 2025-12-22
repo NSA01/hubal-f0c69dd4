@@ -62,6 +62,7 @@ export default function CustomerRequests() {
                 request={{
                   id: request.id,
                   designerName: request.designer_name || 'مصمم',
+                  designerId: request.designer_id,
                   customerName: request.customer_name,
                   city: request.city,
                   propertyType: request.property_type,

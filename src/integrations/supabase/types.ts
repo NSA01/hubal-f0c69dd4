@@ -44,6 +44,41 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          created_at: string
+          customer_id: string
+          designer_id: string
+          id: string
+          last_message_at: string | null
+          service_request_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          designer_id: string
+          id?: string
+          last_message_at?: string | null
+          service_request_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          designer_id?: string
+          id?: string
+          last_message_at?: string | null
+          service_request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: true
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       designers: {
         Row: {
           bio: string | null
@@ -105,6 +140,36 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
