@@ -8,7 +8,7 @@ export interface RoomDesign {
   original_image_url: string;
   generated_image_url: string | null;
   prompt: string;
-  status: 'pending' | 'generating' | 'completed' | 'failed';
+  status: 'pending' | 'generating' | 'completed' | 'failed' | 'open' | 'accepted' | 'in_progress';
   created_at: string;
   updated_at: string;
 }
@@ -152,7 +152,7 @@ export function useAvailableRoomDesigns() {
       const { data, error } = await supabase
         .from('room_designs')
         .select('*')
-        .eq('status', 'completed')
+        .eq('status', 'open')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
