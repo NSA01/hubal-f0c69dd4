@@ -139,6 +139,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "designers_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       messages: {
@@ -244,6 +251,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "reviews_customer_id_profiles_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "reviews_designer_id_fkey"
             columns: ["designer_id"]
             isOneToOne: false
@@ -315,6 +329,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "service_requests_customer_id_profiles_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "service_requests_designer_id_fkey"
             columns: ["designer_id"]
             isOneToOne: false
@@ -346,7 +367,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          city: string | null
+          created_at: string | null
+          id: string | null
+          name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -355,6 +402,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      send_message: {
+        Args: { p_content: string; p_conversation_id: string }
+        Returns: string
       }
       update_request_status: {
         Args: { new_status: string; request_id: string }
