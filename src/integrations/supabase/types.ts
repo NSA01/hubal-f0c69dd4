@@ -79,6 +79,57 @@ export type Database = {
           },
         ]
       }
+      design_offers: {
+        Row: {
+          created_at: string
+          designer_id: string
+          estimated_days: number | null
+          id: string
+          message: string | null
+          price: number
+          room_design_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          designer_id: string
+          estimated_days?: number | null
+          id?: string
+          message?: string | null
+          price: number
+          room_design_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          designer_id?: string
+          estimated_days?: number | null
+          id?: string
+          message?: string | null
+          price?: number
+          room_design_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_offers_designer_id_fkey"
+            columns: ["designer_id"]
+            isOneToOne: false
+            referencedRelation: "designers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "design_offers_room_design_id_fkey"
+            columns: ["room_design_id"]
+            isOneToOne: false
+            referencedRelation: "room_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       designers: {
         Row: {
           bio: string | null
@@ -272,6 +323,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      room_designs: {
+        Row: {
+          created_at: string
+          generated_image_url: string | null
+          id: string
+          original_image_url: string
+          prompt: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_image_url?: string | null
+          id?: string
+          original_image_url: string
+          prompt: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          generated_image_url?: string | null
+          id?: string
+          original_image_url?: string
+          prompt?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       service_requests: {
         Row: {
