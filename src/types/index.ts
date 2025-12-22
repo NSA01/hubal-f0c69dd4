@@ -44,14 +44,27 @@ export interface Category {
   description: string;
 }
 
-export const PROPERTY_TYPES: Record<string, string> = {
+// Clean property types - only Arabic labels
+export const PROPERTY_TYPES = {
   apartment: 'شقة',
   villa: 'فيلا',
   commercial: 'تجاري',
-  شقة: 'شقة',
-  فيلا: 'فيلا',
-  تجاري: 'تجاري',
 } as const;
+
+export type PropertyTypeKey = keyof typeof PROPERTY_TYPES;
+
+// Helper to get label from either key or Arabic value
+export const getPropertyTypeLabel = (value: string): string => {
+  if (value in PROPERTY_TYPES) {
+    return PROPERTY_TYPES[value as PropertyTypeKey];
+  }
+  // If it's already Arabic, return as-is
+  const arabicValues = Object.values(PROPERTY_TYPES);
+  if (arabicValues.includes(value as any)) {
+    return value;
+  }
+  return value;
+};
 
 export const CITIES = [
   'الرياض',
@@ -67,7 +80,7 @@ export const CITIES = [
 ] as const;
 
 export const BUDGET_RANGES = [
-  { min: 0, max: 10000, label: 'أقل من ١٠,٠٠٠ ر.س' },
+  { min: 5000, max: 10000, label: '٥,٠٠٠ - ١٠,٠٠٠ ر.س' },
   { min: 10000, max: 25000, label: '١٠,٠٠٠ - ٢٥,٠٠٠ ر.س' },
   { min: 25000, max: 50000, label: '٢٥,٠٠٠ - ٥٠,٠٠٠ ر.س' },
   { min: 50000, max: 100000, label: '٥٠,٠٠٠ - ١٠٠,٠٠٠ ر.س' },

@@ -1,11 +1,22 @@
-import { MapPin, Home, Building2, Store, Calendar } from 'lucide-react';
-import { ServiceRequest, PROPERTY_TYPES } from '@/types';
+import { MapPin, Home, Building2, Store, Calendar, Wallet } from 'lucide-react';
+import { getPropertyTypeLabel } from '@/types';
 
 interface RequestCardProps {
-  request: ServiceRequest;
+  request: {
+    id: string;
+    customerName?: string;
+    designerName?: string;
+    propertyType: string;
+    budget: number;
+    description?: string | null;
+    city: string;
+    status: string;
+    createdAt: string;
+  };
   showActions?: boolean;
   onAccept?: (id: string) => void;
   onReject?: (id: string) => void;
+  variant?: 'customer' | 'designer';
 }
 
 const propertyIcons: Record<string, typeof Home> = {
@@ -18,11 +29,11 @@ const propertyIcons: Record<string, typeof Home> = {
 };
 
 const statusStyles: Record<string, string> = {
-  pending: 'bg-warning/10 text-warning',
-  accepted: 'bg-success/10 text-success',
-  rejected: 'bg-destructive/10 text-destructive',
-  completed: 'bg-primary/10 text-primary',
-  cancelled: 'bg-muted text-muted-foreground',
+  pending: 'bg-warning/15 text-warning border border-warning/20',
+  accepted: 'bg-success/15 text-success border border-success/20',
+  rejected: 'bg-destructive/15 text-destructive border border-destructive/20',
+  completed: 'bg-primary/15 text-primary border border-primary/20',
+  cancelled: 'bg-muted text-muted-foreground border border-border',
 };
 
 const statusLabels: Record<string, string> = {
@@ -33,7 +44,7 @@ const statusLabels: Record<string, string> = {
   cancelled: 'ملغي',
 };
 
-export function RequestCard({ request, showActions = false, onAccept, onReject }: RequestCardProps) {
+export function RequestCard({ request, showActions = false, onAccept, onReject, variant = 'designer' }: RequestCardProps) {
   const PropertyIcon = propertyIcons[request.propertyType] || Home;
   
   const formatBudget = (budget: number) => {
@@ -48,62 +59,76 @@ export function RequestCard({ request, showActions = false, onAccept, onReject }
     });
   };
 
+  const displayName = variant === 'designer' ? request.customerName : request.designerName;
+
   return (
-    <div className="card-premium p-4">
+    <div className="card-premium p-5 hover:shadow-lg transition-all duration-300">
       {/* Header */}
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h4 className="font-bold text-foreground">{request.customerName}</h4>
-          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4" />
-            <span>{formatDate(request.createdAt)}</span>
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <PropertyIcon className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h4 className="font-bold text-foreground">{displayName || 'مستخدم'}</h4>
+            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+              <Calendar className="w-3.5 h-3.5" />
+              <span>{formatDate(request.createdAt)}</span>
+            </div>
           </div>
         </div>
-        <span className={`badge-status ${statusStyles[request.status] || statusStyles.pending}`}>
+        <span className={`badge-status text-xs px-2.5 py-1 rounded-full ${statusStyles[request.status] || statusStyles.pending}`}>
           {statusLabels[request.status] || request.status}
         </span>
       </div>
 
-      {/* Details */}
-      <div className="space-y-2 mb-3">
-        <div className="flex items-center gap-2 text-sm">
-          <PropertyIcon className="w-4 h-4 text-primary" />
-          <span className="text-muted-foreground">نوع العقار:</span>
-          <span className="font-medium text-foreground">
-            {PROPERTY_TYPES[request.propertyType] || request.propertyType}
-          </span>
+      {/* Details Grid */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="flex items-center gap-2 text-sm bg-secondary/50 rounded-lg p-2.5">
+          <Home className="w-4 h-4 text-primary flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">نوع العقار</p>
+            <p className="font-medium text-foreground truncate">
+              {getPropertyTypeLabel(request.propertyType)}
+            </p>
+          </div>
         </div>
         
-        <div className="flex items-center gap-2 text-sm">
-          <MapPin className="w-4 h-4 text-primary" />
-          <span className="text-muted-foreground">المدينة:</span>
-          <span className="font-medium text-foreground">{request.city}</span>
+        <div className="flex items-center gap-2 text-sm bg-secondary/50 rounded-lg p-2.5">
+          <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">المدينة</p>
+            <p className="font-medium text-foreground truncate">{request.city}</p>
+          </div>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2 text-sm">
-          <span className="chip chip-primary">{formatBudget(request.budget)}</span>
-        </div>
+      {/* Budget */}
+      <div className="flex items-center gap-2 mb-4 p-3 bg-primary/5 rounded-xl border border-primary/10">
+        <Wallet className="w-5 h-5 text-primary" />
+        <span className="text-sm text-muted-foreground">الميزانية:</span>
+        <span className="font-bold text-primary">{formatBudget(request.budget)}</span>
       </div>
 
       {/* Description */}
       {request.description && (
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
           {request.description}
         </p>
       )}
 
       {/* Actions */}
       {showActions && request.status === 'pending' && (
-        <div className="flex gap-3">
+        <div className="flex gap-3 pt-2">
           <button
             onClick={() => onAccept?.(request.id)}
-            className="flex-1 btn-primary py-2 text-sm"
+            className="flex-1 btn-primary py-2.5 text-sm rounded-xl"
           >
-            قبول
+            قبول الطلب
           </button>
           <button
             onClick={() => onReject?.(request.id)}
-            className="flex-1 btn-secondary py-2 text-sm"
+            className="flex-1 btn-secondary py-2.5 text-sm rounded-xl"
           >
             رفض
           </button>

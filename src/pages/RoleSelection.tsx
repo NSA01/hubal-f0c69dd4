@@ -1,30 +1,63 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Palette } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
+import { User, Palette, Loader2 } from 'lucide-react';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function RoleSelection() {
   const navigate = useNavigate();
-  const { setUser } = useAuthStore();
+  const { user } = useAuthContext();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleRoleSelect = (role: 'customer' | 'designer') => {
-    // Mock user for demo
-    const mockUser = {
-      id: role === 'customer' ? 'c1' : 'd1',
-      name: role === 'customer' ? 'محمد العمري' : 'سارة المهندس',
-      email: role === 'customer' ? 'customer@hubal.sa' : 'designer@hubal.sa',
-      role: role,
-      city: 'الرياض',
-    };
-    
-    setUser(mockUser);
-    navigate(role === 'customer' ? '/customer' : '/designer');
+  const handleRoleSelect = async (role: 'customer' | 'designer') => {
+    if (!user) {
+      toast.error('يجب تسجيل الدخول أولاً');
+      navigate('/');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Insert role into user_roles table
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: user.id,
+          role: role,
+        });
+
+      if (roleError) {
+        // If role already exists, just navigate
+        if (roleError.code === '23505') {
+          navigate(role === 'customer' ? '/customer' : '/designer/onboarding');
+          return;
+        }
+        throw roleError;
+      }
+
+      toast.success('تم اختيار الدور بنجاح');
+      
+      // Navigate based on role
+      if (role === 'designer') {
+        navigate('/designer/onboarding');
+      } else {
+        navigate('/customer');
+      }
+    } catch (error) {
+      console.error('Error setting role:', error);
+      toast.error('حدث خطأ، يرجى المحاولة مرة أخرى');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: 'var(--gradient-hero)' }}>
       {/* Logo/Brand */}
       <div className="text-center mb-12 animate-fade-in">
-        <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+        <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6 shadow-lg">
           <Palette className="w-12 h-12 text-primary" />
         </div>
         <h1 className="text-3xl font-bold text-foreground mb-2">هُبَل</h1>
@@ -34,18 +67,23 @@ export default function RoleSelection() {
       {/* Role Selection */}
       <div className="w-full max-w-sm space-y-4">
         <h2 className="text-xl font-semibold text-center text-foreground mb-6">
-          اختر طريقة الدخول
+          اختر نوع حسابك
         </h2>
 
         <button
           onClick={() => handleRoleSelect('customer')}
-          className="w-full card-premium p-6 flex items-center gap-4 hover:border-primary/30 transition-all duration-300 animate-slide-up"
+          disabled={isLoading}
+          className="w-full card-premium p-6 flex items-center gap-4 hover:border-primary/30 hover:shadow-lg transition-all duration-300 animate-slide-up disabled:opacity-50"
           style={{ animationDelay: '0.1s' }}
         >
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <User className="w-7 h-7 text-primary" />
+            {isLoading ? (
+              <Loader2 className="w-7 h-7 text-primary animate-spin" />
+            ) : (
+              <User className="w-7 h-7 text-primary" />
+            )}
           </div>
-          <div className="text-right">
+          <div className="text-right flex-1">
             <h3 className="font-bold text-lg text-foreground">عميل</h3>
             <p className="text-sm text-muted-foreground">
               أبحث عن مصمم داخلي لمشروعي
@@ -55,13 +93,18 @@ export default function RoleSelection() {
 
         <button
           onClick={() => handleRoleSelect('designer')}
-          className="w-full card-premium p-6 flex items-center gap-4 hover:border-primary/30 transition-all duration-300 animate-slide-up"
+          disabled={isLoading}
+          className="w-full card-premium p-6 flex items-center gap-4 hover:border-accent/30 hover:shadow-lg transition-all duration-300 animate-slide-up disabled:opacity-50"
           style={{ animationDelay: '0.2s' }}
         >
           <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-            <Palette className="w-7 h-7 text-accent" />
+            {isLoading ? (
+              <Loader2 className="w-7 h-7 text-accent animate-spin" />
+            ) : (
+              <Palette className="w-7 h-7 text-accent" />
+            )}
           </div>
-          <div className="text-right">
+          <div className="text-right flex-1">
             <h3 className="font-bold text-lg text-foreground">مصمم داخلي</h3>
             <p className="text-sm text-muted-foreground">
               أقدم خدمات التصميم للعملاء
