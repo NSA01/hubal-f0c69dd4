@@ -57,7 +57,8 @@ export default function Auth() {
           }
 
           toast.success('تم إنشاء الحساب بنجاح');
-          navigate(role === 'customer' ? '/customer' : '/designer');
+          // Redirect designer to onboarding, customer to home
+          navigate(role === 'customer' ? '/customer' : '/designer/onboarding');
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
