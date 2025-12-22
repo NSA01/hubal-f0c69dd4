@@ -1,11 +1,15 @@
-import { MapPin, Home, Building2, Store, Calendar, Wallet } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { MapPin, Home, Building2, Store, Calendar, Wallet, MessageCircle } from 'lucide-react';
 import { getPropertyTypeLabel } from '@/types';
+import { useCreateConversation } from '@/hooks/useChat';
+import { toast } from 'sonner';
 
 interface RequestCardProps {
   request: {
     id: string;
     customerName?: string;
     designerName?: string;
+    designerId?: string;
     propertyType: string;
     budget: number;
     description?: string | null;
@@ -46,6 +50,8 @@ const statusLabels: Record<string, string> = {
 
 export function RequestCard({ request, showActions = false, onAccept, onReject, variant = 'designer' }: RequestCardProps) {
   const PropertyIcon = propertyIcons[request.propertyType] || Home;
+  const navigate = useNavigate();
+  const createConversation = useCreateConversation();
   
   const formatBudget = (budget: number) => {
     return new Intl.NumberFormat('ar-SA').format(budget) + ' ر.س';
@@ -60,6 +66,28 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
   };
 
   const displayName = variant === 'designer' ? request.customerName : request.designerName;
+
+  const handleStartChat = async () => {
+    if (!request.designerId) {
+      toast.error('لا يمكن بدء المحادثة');
+      return;
+    }
+
+    try {
+      const conversation = await createConversation.mutateAsync({
+        serviceRequestId: request.id,
+        designerId: request.designerId,
+      });
+      
+      const basePath = variant === 'customer' ? '/customer' : '/designer';
+      navigate(`${basePath}/chat/${conversation.id}`);
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      toast.error('حدث خطأ أثناء بدء المحادثة');
+    }
+  };
+
+  const showChatButton = request.status === 'accepted' && variant === 'customer';
 
   return (
     <div className="card-premium p-5 hover:shadow-lg transition-all duration-300">
@@ -133,6 +161,18 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
             رفض
           </button>
         </div>
+      )}
+
+      {/* Chat Button for accepted requests */}
+      {showChatButton && (
+        <button
+          onClick={handleStartChat}
+          disabled={createConversation.isPending}
+          className="w-full btn-primary py-2.5 text-sm rounded-xl flex items-center justify-center gap-2 mt-2"
+        >
+          <MessageCircle className="w-4 h-4" />
+          بدء المحادثة
+        </button>
       )}
     </div>
   );

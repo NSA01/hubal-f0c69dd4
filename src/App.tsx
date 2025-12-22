@@ -15,11 +15,15 @@ import DesignerProfile from "./pages/customer/DesignerProfile";
 import ServiceRequest from "./pages/customer/ServiceRequest";
 import CustomerRequests from "./pages/customer/CustomerRequests";
 import CustomerProfile from "./pages/customer/CustomerProfile";
+import CustomerMessages from "./pages/customer/CustomerMessages";
+import CustomerChat from "./pages/customer/CustomerChat";
 import DesignerDashboard from "./pages/designer/DesignerDashboard";
 import DesignerRequests from "./pages/designer/DesignerRequests";
 import DesignerReviews from "./pages/designer/DesignerReviews";
 import DesignerProfileEdit from "./pages/designer/DesignerProfileEdit";
 import DesignerOnboarding from "./pages/designer/DesignerOnboarding";
+import DesignerMessages from "./pages/designer/DesignerMessages";
+import DesignerChat from "./pages/designer/DesignerChat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -128,6 +132,16 @@ function AppRoutes() {
           <CustomerRequests />
         </ProtectedRoute>
       } />
+      <Route path="/customer/messages" element={
+        <ProtectedRoute allowedRole="customer">
+          <CustomerMessages />
+        </ProtectedRoute>
+      } />
+      <Route path="/customer/chat/:conversationId" element={
+        <ProtectedRoute allowedRole="customer">
+          <CustomerChat />
+        </ProtectedRoute>
+      } />
       <Route path="/customer/profile" element={
         <ProtectedRoute allowedRole="customer">
           <CustomerProfile />
@@ -148,6 +162,16 @@ function AppRoutes() {
       <Route path="/designer/requests" element={
         <ProtectedRoute allowedRole="designer">
           <DesignerRequests />
+        </ProtectedRoute>
+      } />
+      <Route path="/designer/messages" element={
+        <ProtectedRoute allowedRole="designer">
+          <DesignerMessages />
+        </ProtectedRoute>
+      } />
+      <Route path="/designer/chat/:conversationId" element={
+        <ProtectedRoute allowedRole="designer">
+          <DesignerChat />
         </ProtectedRoute>
       } />
       <Route path="/designer/reviews" element={
