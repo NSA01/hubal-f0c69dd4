@@ -20,6 +20,7 @@ interface RequestCardProps {
   showActions?: boolean;
   onAccept?: (id: string) => void;
   onReject?: (id: string) => void;
+  onComplete?: (id: string) => void;
   variant?: 'customer' | 'designer';
 }
 
@@ -48,7 +49,7 @@ const statusLabels: Record<string, string> = {
   cancelled: 'ملغي',
 };
 
-export function RequestCard({ request, showActions = false, onAccept, onReject, variant = 'designer' }: RequestCardProps) {
+export function RequestCard({ request, showActions = false, onAccept, onReject, onComplete, variant = 'designer' }: RequestCardProps) {
   const PropertyIcon = propertyIcons[request.propertyType] || Home;
   const navigate = useNavigate();
   const createConversation = useCreateConversation();
@@ -145,8 +146,8 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
         </p>
       )}
 
-      {/* Actions */}
-      {showActions && request.status === 'pending' && (
+      {/* Actions - Pending */}
+      {showActions && request.status === 'pending' && onAccept && onReject && (
         <div className="flex gap-3 pt-2">
           <button
             onClick={() => onAccept?.(request.id)}
@@ -159,6 +160,18 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
             className="flex-1 btn-secondary py-2.5 text-sm rounded-xl"
           >
             رفض
+          </button>
+        </div>
+      )}
+
+      {/* Actions - Accepted (Mark as Complete) */}
+      {showActions && request.status === 'accepted' && onComplete && (
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => onComplete?.(request.id)}
+            className="flex-1 btn-primary py-2.5 text-sm rounded-xl"
+          >
+            إنهاء المشروع
           </button>
         </div>
       )}
