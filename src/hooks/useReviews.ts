@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Review {
@@ -46,6 +46,71 @@ export function useDesignerReviews(designerId?: string) {
       }
 
       return reviews as Review[];
+    },
+    enabled: !!designerId,
+  });
+}
+
+export function useCreateReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      designerId,
+      serviceRequestId,
+      rating,
+      comment,
+    }: {
+      designerId: string;
+      serviceRequestId?: string;
+      rating: number;
+      comment?: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert({
+          designer_id: designerId,
+          customer_id: user.id,
+          service_request_id: serviceRequestId,
+          rating,
+          comment: comment?.trim() || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['designer-reviews', variables.designerId] });
+      queryClient.invalidateQueries({ queryKey: ['customer-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['designers'] });
+    },
+  });
+}
+
+export function useHasReviewed(designerId?: string, serviceRequestId?: string) {
+  return useQuery({
+    queryKey: ['has-reviewed', designerId, serviceRequestId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !designerId) return false;
+
+      let query = supabase
+        .from('reviews')
+        .select('id')
+        .eq('designer_id', designerId)
+        .eq('customer_id', user.id);
+
+      if (serviceRequestId) {
+        query = query.eq('service_request_id', serviceRequestId);
+      }
+
+      const { data } = await query.maybeSingle();
+      return !!data;
     },
     enabled: !!designerId,
   });

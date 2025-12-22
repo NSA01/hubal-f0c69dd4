@@ -1,10 +1,12 @@
 import React from 'react';
-import { Check, X, Clock, Star, MessageSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, X, Clock, Star, MessageSquare, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useDesignOffers, useUpdateOfferStatus, DesignOffer } from '@/hooks/useRoomDesigns';
+import { useCreateConversation } from '@/hooks/useChat';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -14,17 +16,27 @@ interface DesignOffersListProps {
 }
 
 export const DesignOffersList: React.FC<DesignOffersListProps> = ({ roomDesignId }) => {
+  const navigate = useNavigate();
   const { data: offers, isLoading } = useDesignOffers(roomDesignId);
   const updateStatus = useUpdateOfferStatus();
+  const createConversation = useCreateConversation();
   const { toast } = useToast();
 
-  const handleAccept = async (offerId: string) => {
+  const handleAccept = async (offer: DesignOffer) => {
     try {
-      await updateStatus.mutateAsync({ offerId, status: 'accepted' });
+      await updateStatus.mutateAsync({ offerId: offer.id, status: 'accepted' });
+      
+      // Create conversation and navigate to chat
+      const conversation = await createConversation.mutateAsync({
+        designerId: offer.designer_id,
+      });
+      
       toast({
         title: 'تم قبول العرض',
-        description: 'سيتم التواصل معك من قبل المصمم',
+        description: 'جاري فتح المحادثة مع المصمم',
       });
+      
+      navigate(`/customer/chat/${conversation.id}`);
     } catch (error) {
       toast({
         title: 'حدث خطأ',
@@ -44,6 +56,21 @@ export const DesignOffersList: React.FC<DesignOffersListProps> = ({ roomDesignId
       toast({
         title: 'حدث خطأ',
         description: 'فشل في رفض العرض',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleStartChat = async (offer: DesignOffer) => {
+    try {
+      const conversation = await createConversation.mutateAsync({
+        designerId: offer.designer_id,
+      });
+      navigate(`/customer/chat/${conversation.id}`);
+    } catch (error) {
+      toast({
+        title: 'حدث خطأ',
+        description: 'فشل في فتح المحادثة',
         variant: 'destructive',
       });
     }
@@ -78,9 +105,10 @@ export const DesignOffersList: React.FC<DesignOffersListProps> = ({ roomDesignId
         <OfferCard
           key={offer.id}
           offer={offer}
-          onAccept={() => handleAccept(offer.id)}
+          onAccept={() => handleAccept(offer)}
           onReject={() => handleReject(offer.id)}
-          isUpdating={updateStatus.isPending}
+          onStartChat={() => handleStartChat(offer)}
+          isUpdating={updateStatus.isPending || createConversation.isPending}
         />
       ))}
     </div>
@@ -91,10 +119,11 @@ interface OfferCardProps {
   offer: DesignOffer;
   onAccept: () => void;
   onReject: () => void;
+  onStartChat: () => void;
   isUpdating: boolean;
 }
 
-const OfferCard: React.FC<OfferCardProps> = ({ offer, onAccept, onReject, isUpdating }) => {
+const OfferCard: React.FC<OfferCardProps> = ({ offer, onAccept, onReject, onStartChat, isUpdating }) => {
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800',
     accepted: 'bg-green-100 text-green-800',
@@ -191,6 +220,17 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, onAccept, onReject, isUpda
                     قبول
                   </Button>
                 </div>
+              )}
+
+              {offer.status === 'accepted' && (
+                <Button
+                  size="sm"
+                  onClick={onStartChat}
+                  disabled={isUpdating}
+                >
+                  <MessageCircle className="h-4 w-4 ml-1" />
+                  محادثة
+                </Button>
               )}
             </div>
           </div>

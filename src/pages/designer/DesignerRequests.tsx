@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { RequestCard } from '@/components/RequestCard';
@@ -6,6 +7,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useMyDesignerProfile } from '@/hooks/useDesigners';
 import { useDesignerRequests, useUpdateRequestStatus } from '@/hooks/useServiceRequests';
 import { useAvailableRoomDesigns, useMyDesignOffers } from '@/hooks/useRoomDesigns';
+import { useCreateConversation } from '@/hooks/useChat';
 import { SendOfferForm } from '@/components/SendOfferForm';
 import { Loader2, Image, Calendar, Send } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,12 +23,14 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
 export default function DesignerRequests() {
+  const navigate = useNavigate();
   const { user } = useAuthContext();
   const { data: designer, isLoading: loadingDesigner } = useMyDesignerProfile(user?.id);
   const { data: serviceRequests = [], isLoading: loadingRequests } = useDesignerRequests(designer?.id);
   const { data: roomDesigns = [], isLoading: loadingDesigns } = useAvailableRoomDesigns();
   const { data: myOffers = [], isLoading: loadingOffers } = useMyDesignOffers();
   const updateStatus = useUpdateRequestStatus();
+  const createConversation = useCreateConversation();
   
   const [selectedDesign, setSelectedDesign] = useState<typeof roomDesigns[0] | null>(null);
   const [showOfferDialog, setShowOfferDialog] = useState(false);
@@ -46,8 +50,19 @@ export default function DesignerRequests() {
 
   const handleAccept = async (id: string) => {
     try {
+      const request = serviceRequests.find(r => r.id === id);
       await updateStatus.mutateAsync({ id, status: 'accepted' });
-      toast.success('تم قبول الطلب');
+      
+      // Create conversation and navigate to chat
+      if (request && designer) {
+        const conversation = await createConversation.mutateAsync({
+          serviceRequestId: id,
+          designerId: designer.id,
+          customerId: request.customer_id,
+        });
+        toast.success('تم قبول الطلب');
+        navigate(`/designer/chat/${conversation.id}`);
+      }
     } catch (error) {
       toast.error('حدث خطأ');
     }

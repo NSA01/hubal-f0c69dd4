@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Home, Building2, Store, Calendar, Wallet, MessageCircle } from 'lucide-react';
+import { MapPin, Home, Building2, Store, Calendar, Wallet, MessageCircle, Star } from 'lucide-react';
 import { getPropertyTypeLabel } from '@/types';
 import { useCreateConversation } from '@/hooks/useChat';
+import { useHasReviewed } from '@/hooks/useReviews';
+import { ReviewForm } from '@/components/ReviewForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 interface RequestCardProps {
@@ -53,6 +57,8 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
   const PropertyIcon = propertyIcons[request.propertyType] || Home;
   const navigate = useNavigate();
   const createConversation = useCreateConversation();
+  const { data: hasReviewed } = useHasReviewed(request.designerId, request.id);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
   
   const formatBudget = (budget: number) => {
     return new Intl.NumberFormat('ar-SA').format(budget) + ' ر.س';
@@ -89,8 +95,10 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
   };
 
   const showChatButton = request.status === 'accepted' && variant === 'customer';
+  const showReviewButton = request.status === 'completed' && variant === 'customer' && request.designerId && !hasReviewed;
 
   return (
+    <>
     <div className="card-premium p-5 hover:shadow-lg transition-all duration-300">
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
@@ -187,6 +195,42 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
           بدء المحادثة
         </button>
       )}
+
+      {/* Review Button for completed requests */}
+      {showReviewButton && (
+        <button
+          onClick={() => setShowReviewDialog(true)}
+          className="w-full btn-primary py-2.5 text-sm rounded-xl flex items-center justify-center gap-2 mt-2"
+        >
+          <Star className="w-4 h-4" />
+          تقييم المصمم
+        </button>
+      )}
+
+      {/* Already reviewed indicator */}
+      {request.status === 'completed' && variant === 'customer' && hasReviewed && (
+        <div className="flex items-center justify-center gap-2 mt-2 py-2.5 text-sm text-muted-foreground">
+          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+          تم التقييم
+        </div>
+      )}
     </div>
+
+    {/* Review Dialog */}
+    <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
+      <DialogContent className="max-w-md" dir="rtl">
+        <DialogHeader>
+          <DialogTitle>تقييم {request.designerName || 'المصمم'}</DialogTitle>
+        </DialogHeader>
+        {request.designerId && (
+          <ReviewForm
+            designerId={request.designerId}
+            serviceRequestId={request.id}
+            onSuccess={() => setShowReviewDialog(false)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
