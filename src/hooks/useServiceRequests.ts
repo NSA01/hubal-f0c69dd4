@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { ServiceRequestSchema, StatusUpdateSchema } from '@/lib/validations';
 
 export interface ServiceRequest {
   id: string;
@@ -120,6 +121,9 @@ export function useCreateServiceRequest() {
       budget: number;
       description?: string;
     }) => {
+      // Validate input with Zod
+      const validated = ServiceRequestSchema.parse(request);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -127,11 +131,11 @@ export function useCreateServiceRequest() {
         .from('service_requests')
         .insert({
           customer_id: user.id,
-          designer_id: request.designer_id,
-          property_type: request.property_type,
-          city: request.city,
-          budget: request.budget,
-          description: request.description,
+          designer_id: validated.designer_id,
+          property_type: validated.property_type,
+          city: validated.city,
+          budget: validated.budget,
+          description: validated.description,
         })
         .select()
         .single();
@@ -151,15 +155,17 @@ export function useUpdateRequestStatus() {
 
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { data, error } = await supabase
-        .from('service_requests')
-        .update({ status })
-        .eq('id', id)
-        .select()
-        .single();
+      // Validate input with Zod
+      const validated = StatusUpdateSchema.parse({ id, status });
+      
+      // Use secure RPC function for status updates
+      const { error } = await supabase.rpc('update_request_status', {
+        request_id: validated.id,
+        new_status: validated.status,
+      });
 
       if (error) throw error;
-      return data;
+      return { id: validated.id, status: validated.status };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['designer-requests'] });
