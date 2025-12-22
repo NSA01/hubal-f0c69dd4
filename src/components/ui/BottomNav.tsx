@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, FileText, User, LayoutGrid, MessageSquare, Star } from 'lucide-react';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const customerNavItems = [
   { icon: Home, label: 'الرئيسية', path: '/customer' },
@@ -18,7 +18,7 @@ const designerNavItems = [
 
 export function BottomNav() {
   const location = useLocation();
-  const { role } = useAuthStore();
+  const { role } = useAuthContext();
   
   const navItems = role === 'designer' ? designerNavItems : customerNavItems;
   
