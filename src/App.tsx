@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 
 // Pages
 import Auth from "./pages/Auth";
+import RoleSelection from "./pages/RoleSelection";
 import CustomerHome from "./pages/customer/CustomerHome";
 import DesignersList from "./pages/customer/DesignersList";
 import DesignerProfile from "./pages/customer/DesignerProfile";
@@ -45,6 +46,11 @@ function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode; 
     return <Navigate to="/" replace />;
   }
   
+  // If user has no role yet, redirect to role selection
+  if (!role) {
+    return <Navigate to="/select-role" replace />;
+  }
+  
   if (role !== allowedRole) {
     return <Navigate to={`/${role}`} replace />;
   }
@@ -59,11 +65,34 @@ function AuthRedirect() {
     return <LoadingScreen />;
   }
   
-  if (isAuthenticated && role) {
+  if (isAuthenticated) {
+    // If authenticated but no role, go to role selection
+    if (!role) {
+      return <Navigate to="/select-role" replace />;
+    }
     return <Navigate to={`/${role}`} replace />;
   }
   
   return <Auth />;
+}
+
+function RoleSelectionRoute() {
+  const { isAuthenticated, role, loading } = useAuthContext();
+  
+  if (loading) {
+    return <LoadingScreen />;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  // If already has a role, redirect to their dashboard
+  if (role) {
+    return <Navigate to={`/${role}`} replace />;
+  }
+  
+  return <RoleSelection />;
 }
 
 function AppRoutes() {
@@ -71,6 +100,7 @@ function AppRoutes() {
     <Routes>
       {/* Auth */}
       <Route path="/" element={<AuthRedirect />} />
+      <Route path="/select-role" element={<RoleSelectionRoute />} />
       
       {/* Customer Routes */}
       <Route path="/customer" element={

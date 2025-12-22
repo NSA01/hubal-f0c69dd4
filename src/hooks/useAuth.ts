@@ -61,21 +61,28 @@ export function useAuth() {
 
       if (error) {
         console.error('Error fetching role:', error);
+        // Don't fail silently - still set loading to false
+        setRole(null);
+        setLoading(false);
+        return;
       }
       
       setRole((data?.role as UserRole) || null);
     } catch (err) {
       console.error('Error fetching role:', err);
+      setRole(null);
     } finally {
       setLoading(false);
     }
   };
 
   const signOut = async () => {
+    setLoading(true);
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
     setRole(null);
+    setLoading(false);
   };
 
   return {

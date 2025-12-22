@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, Loader2 } from 'lucide-react';
+import { ArrowRight, Check, Loader2, Home, Building2, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { useDesigner } from '@/hooks/useDesigners';
 import { useCreateServiceRequest } from '@/hooks/useServiceRequests';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { PROPERTY_TYPES, CITIES, BUDGET_RANGES } from '@/types';
+import { PROPERTY_TYPES, CITIES, BUDGET_RANGES, PropertyTypeKey } from '@/types';
+
+const propertyIcons: Record<string, typeof Home> = {
+  apartment: Home,
+  villa: Building2,
+  commercial: Store,
+};
 
 export default function ServiceRequest() {
   const { designerId } = useParams<{ designerId: string }>();
@@ -16,7 +22,7 @@ export default function ServiceRequest() {
   const { data: designer, isLoading } = useDesigner(designerId || '');
   const createRequest = useCreateServiceRequest();
   const [formData, setFormData] = useState({
-    propertyType: '' as keyof typeof PROPERTY_TYPES | '',
+    propertyType: '' as PropertyTypeKey | '',
     city: '',
     budget: '',
     description: '',
@@ -34,8 +40,11 @@ export default function ServiceRequest() {
 
   if (!designer) {
     return (
-      <div className="page-container flex items-center justify-center">
+      <div className="page-container flex flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">المصمم غير موجود</p>
+        <Link to="/customer/designers" className="btn-primary px-6 py-2">
+          تصفح المصممين
+        </Link>
       </div>
     );
   }
@@ -76,8 +85,8 @@ export default function ServiceRequest() {
   return (
     <div className="page-container">
       {/* Header */}
-      <header className="flex items-center gap-4 mb-6">
-        <Link to={`/customer/designer/${designerId}`} className="p-2 -mr-2">
+      <header className="flex items-center gap-4 mb-8">
+        <Link to={`/customer/designer/${designerId}`} className="p-2 -mr-2 hover:bg-secondary rounded-full transition-colors">
           <ArrowRight className="w-6 h-6 text-foreground" />
         </Link>
         <div>
@@ -92,41 +101,51 @@ export default function ServiceRequest() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Property Type */}
         <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <label className="block text-sm font-medium text-foreground mb-3">
+          <label className="block text-sm font-semibold text-foreground mb-3">
             نوع العقار
           </label>
           <div className="grid grid-cols-3 gap-3">
-            {(Object.entries(PROPERTY_TYPES) as [keyof typeof PROPERTY_TYPES, string][]).map(
-              ([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, propertyType: key })}
-                  className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                    formData.propertyType === key
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-card'
-                  }`}
-                >
-                  <span className="font-medium text-foreground">{label}</span>
-                  {formData.propertyType === key && (
-                    <Check className="w-4 h-4 text-primary mx-auto mt-1" />
-                  )}
-                </button>
-              )
+            {(Object.entries(PROPERTY_TYPES) as [PropertyTypeKey, string][]).map(
+              ([key, label]) => {
+                const Icon = propertyIcons[key] || Home;
+                const isSelected = formData.propertyType === key;
+                
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, propertyType: key })}
+                    className={`relative p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
+                      isSelected
+                        ? 'border-primary bg-primary/10 shadow-md'
+                        : 'border-border bg-card hover:border-primary/50 hover:bg-card/80'
+                    }`}
+                  >
+                    <Icon className={`w-6 h-6 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <span className={`font-medium text-sm ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                      {label}
+                    </span>
+                    {isSelected && (
+                      <div className="absolute -top-2 -right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="w-3 h-3 text-primary-foreground" />
+                      </div>
+                    )}
+                  </button>
+                );
+              }
             )}
           </div>
         </div>
 
         {/* City */}
         <div className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-semibold text-foreground mb-2">
             المدينة
           </label>
           <select
             value={formData.city}
             onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-            className="input-field"
+            className="input-field cursor-pointer"
           >
             <option value="">اختر المدينة</option>
             {CITIES.map((city) => (
@@ -139,13 +158,13 @@ export default function ServiceRequest() {
 
         {/* Budget */}
         <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-semibold text-foreground mb-2">
             الميزانية المتوقعة
           </label>
           <select
             value={formData.budget}
             onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-            className="input-field"
+            className="input-field cursor-pointer"
           >
             <option value="">اختر نطاق الميزانية</option>
             {BUDGET_RANGES.map((range, idx) => (
@@ -158,7 +177,7 @@ export default function ServiceRequest() {
 
         {/* Description */}
         <div className="animate-slide-up" style={{ animationDelay: '0.25s' }}>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-semibold text-foreground mb-2">
             وصف المشروع
           </label>
           <textarea
@@ -170,16 +189,26 @@ export default function ServiceRequest() {
             rows={5}
             className="input-field resize-none"
           />
+          <p className="text-xs text-muted-foreground mt-2">
+            كلما كان الوصف أكثر تفصيلاً، كلما كان التواصل أسهل
+          </p>
         </div>
 
         {/* Submit Button */}
-        <div className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
+        <div className="animate-slide-up pt-2" style={{ animationDelay: '0.3s' }}>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full btn-primary py-4 text-lg disabled:opacity-50"
+            className="w-full btn-primary py-4 text-lg disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {isSubmitting ? 'جاري الإرسال...' : 'إرسال الطلب'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                جاري الإرسال...
+              </>
+            ) : (
+              'إرسال الطلب'
+            )}
           </button>
         </div>
       </form>
