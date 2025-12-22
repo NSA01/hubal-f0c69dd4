@@ -126,7 +126,7 @@ export default function DesignerRequests() {
             )}
           </TabsTrigger>
           <TabsTrigger value="direct" className="flex-1">
-            طلبات مباشرة
+            طلبات واردة
             {serviceRequests.filter(r => r.status === 'pending').length > 0 && (
               <span className="mr-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
                 {serviceRequests.filter(r => r.status === 'pending').length}
