@@ -55,16 +55,16 @@ serve(async (req) => {
             role: "user",
             content: [
               {
-                type: "text",
-                text: `You are an expert interior designer. Take this room photo and redesign it based on the following request: "${prompt}". 
-                
-Create a beautiful, realistic redesigned version of this room that incorporates the requested changes while maintaining the room's basic structure and dimensions. Make the design look professional and achievable.`
-              },
-              {
                 type: "image_url",
                 image_url: {
                   url: imageUrl
                 }
+              },
+              {
+                type: "text",
+                text: `Generate a new image of this room redesigned as: "${prompt}". 
+
+IMPORTANT: You MUST generate and output an actual image showing the redesigned room. Transform this room photo into a beautiful, realistic redesigned version that incorporates the requested style while maintaining the room's basic structure and dimensions. Output the redesigned room as an image.`
               }
             ]
           }
