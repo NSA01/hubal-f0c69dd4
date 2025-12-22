@@ -31,9 +31,11 @@ export default function DesignerProfile() {
     );
   }
 
-  const formatBudget = (min: number, max: number) => {
+  const formatBudget = (min: number | null, max: number | null) => {
+    const minVal = min || 0;
+    const maxVal = max || 0;
     const format = (n: number) => new Intl.NumberFormat('ar-SA').format(n);
-    return `${format(min)} - ${format(max)} ر.س`;
+    return `${format(minVal)} - ${format(maxVal)} ر.س`;
   };
 
   return (
@@ -75,8 +77,8 @@ export default function DesignerProfile() {
             </div>
             <div className="mt-2">
               <StarRating
-                rating={designer.rating}
-                reviewsCount={designer.review_count}
+                rating={Number(designer.rating) || 0}
+                reviewsCount={designer.review_count || 0}
               />
             </div>
           </div>
