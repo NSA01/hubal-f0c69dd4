@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Plus, X, Camera, Check, Loader2 } from 'lucide-react';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { CITIES, BUDGET_RANGES } from '@/types';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useMyDesignerProfile } from '@/hooks/useDesigners';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,7 +17,7 @@ interface ProfileData {
 export default function DesignerProfileEdit() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, logout } = useAuthStore();
+  const { user, signOut } = useAuthContext();
   const { data: designer, isLoading } = useMyDesignerProfile(user?.id);
   const [profile, setProfile] = useState<ProfileData | null>(null);
 
@@ -147,8 +147,8 @@ export default function DesignerProfileEdit() {
     });
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await signOut();
     navigate('/');
   };
 
