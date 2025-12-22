@@ -18,6 +18,7 @@ import DesignerDashboard from "./pages/designer/DesignerDashboard";
 import DesignerRequests from "./pages/designer/DesignerRequests";
 import DesignerReviews from "./pages/designer/DesignerReviews";
 import DesignerProfileEdit from "./pages/designer/DesignerProfileEdit";
+import DesignerOnboarding from "./pages/designer/DesignerOnboarding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -104,6 +105,11 @@ function AppRoutes() {
       } />
       
       {/* Designer Routes */}
+      <Route path="/designer/onboarding" element={
+        <ProtectedRoute allowedRole="designer">
+          <DesignerOnboarding />
+        </ProtectedRoute>
+      } />
       <Route path="/designer" element={
         <ProtectedRoute allowedRole="designer">
           <DesignerDashboard />
