@@ -152,39 +152,30 @@ export function useSendMessage() {
   return useMutation({
     mutationFn: async ({
       conversationId,
-      receiverId,
       content,
     }: {
       conversationId: string;
-      receiverId: string;
+      receiverId?: string; // Keep for backwards compatibility but not used
       content: string;
     }) => {
-      // Validate input with Zod
-      const validated = MessageSchema.parse({ conversationId, receiverId, content });
+      // Validate content with Zod
+      const trimmedContent = content.trim();
+      if (trimmedContent.length < 1 || trimmedContent.length > 2000) {
+        throw new Error('Message content must be between 1 and 2000 characters');
+      }
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: validated.conversationId,
-          sender_id: user.id,
-          receiver_id: validated.receiverId,
-          content: validated.content,
-        })
-        .select()
-        .single();
+      // Use secure RPC function that validates conversation participation
+      const { data, error } = await supabase.rpc('send_message', {
+        p_conversation_id: conversationId,
+        p_content: trimmedContent,
+      });
 
       if (error) throw error;
 
-      // Update conversation last_message_at
-      await supabase
-        .from('conversations')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', validated.conversationId);
-
-      return data;
+      return { id: data };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['messages', variables.conversationId] });
