@@ -356,6 +356,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_request_status: {
+        Args: { new_status: string; request_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "customer" | "designer"

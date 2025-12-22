@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { MessageSchema } from '@/lib/validations';
 
 export interface Message {
   id: string;
@@ -158,16 +159,19 @@ export function useSendMessage() {
       receiverId: string;
       content: string;
     }) => {
+      // Validate input with Zod
+      const validated = MessageSchema.parse({ conversationId, receiverId, content });
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('messages')
         .insert({
-          conversation_id: conversationId,
+          conversation_id: validated.conversationId,
           sender_id: user.id,
-          receiver_id: receiverId,
-          content,
+          receiver_id: validated.receiverId,
+          content: validated.content,
         })
         .select()
         .single();
@@ -178,7 +182,7 @@ export function useSendMessage() {
       await supabase
         .from('conversations')
         .update({ last_message_at: new Date().toISOString() })
-        .eq('id', conversationId);
+        .eq('id', validated.conversationId);
 
       return data;
     },
