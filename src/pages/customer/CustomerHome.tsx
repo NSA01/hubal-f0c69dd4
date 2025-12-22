@@ -1,7 +1,8 @@
 import { useAuthContext } from '@/contexts/AuthContext';
 import { CategoryCard } from '@/components/CategoryCard';
 import { BottomNav } from '@/components/ui/BottomNav';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Wand2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const categories = [
   {
@@ -41,8 +42,29 @@ export default function CustomerHome() {
         </div>
       </section>
 
+      {/* AI Room Design Feature */}
+      <section className="mt-8 animate-slide-up" style={{ animationDelay: '0.15s' }}>
+        <Link to="/customer/room-design">
+          <div className="card-premium p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 hover:border-primary/40 transition-all cursor-pointer">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <Wand2 className="w-7 h-7 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-foreground mb-1">
+                  صمم غرفتك بالذكاء الاصطناعي
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  التقط صورة واحصل على تصميم مقترح وعروض من المصممين
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+      </section>
+
       {/* Featured Section */}
-      <section className="mt-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+      <section className="mt-6 animate-slide-up" style={{ animationDelay: '0.2s' }}>
         <div className="card-premium p-6 bg-gradient-to-br from-primary/5 to-accent/5">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">

@@ -1,1 +1,4 @@
 project_id = "jlfksgynkbmgjzrjgpvq"
+
+[functions.generate-room-design]
+verify_jwt = true

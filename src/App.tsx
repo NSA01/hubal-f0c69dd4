@@ -24,6 +24,8 @@ import DesignerProfileEdit from "./pages/designer/DesignerProfileEdit";
 import DesignerOnboarding from "./pages/designer/DesignerOnboarding";
 import DesignerMessages from "./pages/designer/DesignerMessages";
 import DesignerChat from "./pages/designer/DesignerChat";
+import RoomDesign from "./pages/customer/RoomDesign";
+import DesignerOffers from "./pages/designer/DesignerOffers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -147,6 +149,11 @@ function AppRoutes() {
           <CustomerProfile />
         </ProtectedRoute>
       } />
+      <Route path="/customer/room-design" element={
+        <ProtectedRoute allowedRole="customer">
+          <RoomDesign />
+        </ProtectedRoute>
+      } />
       
       {/* Designer Routes */}
       <Route path="/designer/onboarding" element={
@@ -182,6 +189,11 @@ function AppRoutes() {
       <Route path="/designer/profile" element={
         <ProtectedRoute allowedRole="designer">
           <DesignerProfileEdit />
+        </ProtectedRoute>
+      } />
+      <Route path="/designer/offers" element={
+        <ProtectedRoute allowedRole="designer">
+          <DesignerOffers />
         </ProtectedRoute>
       } />
       
