@@ -558,12 +558,12 @@ export default function DesignerProfileEdit() {
         </div>
       </div>
 
-      {/* Save & Logout Buttons */}
-      <div className="fixed bottom-20 left-4 right-4 z-40 space-y-3">
+      {/* Save & Logout Buttons - Fixed at bottom */}
+      <div className="fixed bottom-20 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 space-y-2">
         <button
           onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending}
-          className="w-full btn-primary py-4 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full btn-primary py-3 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {saveMutation.isPending ? (
             <>
@@ -574,7 +574,7 @@ export default function DesignerProfileEdit() {
             'حفظ التغييرات'
           )}
         </button>
-        <button onClick={handleLogout} className="w-full btn-secondary py-3 text-destructive">
+        <button onClick={handleLogout} className="w-full btn-secondary py-2.5 text-destructive">
           تسجيل الخروج
         </button>
       </div>
