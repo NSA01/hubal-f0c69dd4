@@ -296,7 +296,7 @@ export default function DesignerProfileEdit() {
   }
 
   return (
-    <div className="page-container pb-32">
+    <div className="page-container pb-24">
       {/* Hidden file inputs */}
       <input
         ref={avatarInputRef}
@@ -558,12 +558,12 @@ export default function DesignerProfileEdit() {
         </div>
       </div>
 
-      {/* Save & Logout Buttons - Fixed at bottom */}
-      <div className="fixed bottom-20 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 space-y-2">
+      {/* Save & Logout Buttons */}
+      <div className="mt-8 space-y-3 animate-slide-up" style={{ animationDelay: '0.5s' }}>
         <button
           onClick={() => saveMutation.mutate()}
           disabled={saveMutation.isPending}
-          className="w-full btn-primary py-3 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full btn-primary py-4 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {saveMutation.isPending ? (
             <>
@@ -574,7 +574,7 @@ export default function DesignerProfileEdit() {
             'حفظ التغييرات'
           )}
         </button>
-        <button onClick={handleLogout} className="w-full btn-secondary py-2.5 text-destructive">
+        <button onClick={handleLogout} className="w-full btn-secondary py-3 text-destructive">
           تسجيل الخروج
         </button>
       </div>
