@@ -60,17 +60,20 @@ export default function DesignerOnboarding() {
     setLoading(true);
 
     try {
+      // Use upsert to handle both new and existing designers
       const { error } = await supabase
         .from('designers')
-        .update({
+        .upsert({
+          user_id: user.id,
           business_name: formData.businessName.trim() || null,
           city: formData.city,
           bio: formData.bio.trim(),
           services: formData.services,
           min_budget: formData.minBudget,
           max_budget: formData.maxBudget,
-        })
-        .eq('user_id', user.id);
+        }, {
+          onConflict: 'user_id'
+        });
 
       if (error) throw error;
 

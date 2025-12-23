@@ -4,6 +4,7 @@ import { useAuth, AuthState } from '@/hooks/useAuth';
 interface AuthContextType extends AuthState {
   isAuthenticated: boolean;
   signOut: () => Promise<void>;
+  refetchRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);

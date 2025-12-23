@@ -7,10 +7,10 @@ import { toast } from 'sonner';
 
 export default function RoleSelection() {
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { user, refetchRole } = useAuthContext();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRoleSelect = async (role: 'customer' | 'designer') => {
+  const handleRoleSelect = async (selectedRole: 'customer' | 'designer') => {
     if (!user) {
       toast.error('يجب تسجيل الدخول أولاً');
       navigate('/');
@@ -25,22 +25,26 @@ export default function RoleSelection() {
         .from('user_roles')
         .insert({
           user_id: user.id,
-          role: role,
+          role: selectedRole,
         });
 
       if (roleError) {
-        // If role already exists, just navigate
+        // If role already exists, refetch and navigate
         if (roleError.code === '23505') {
-          navigate(role === 'customer' ? '/customer' : '/designer/onboarding');
+          await refetchRole();
+          navigate(selectedRole === 'customer' ? '/customer' : '/designer/onboarding');
           return;
         }
         throw roleError;
       }
 
+      // Refetch the role so AuthContext knows about it
+      await refetchRole();
+      
       toast.success('تم اختيار الدور بنجاح');
       
       // Navigate based on role
-      if (role === 'designer') {
+      if (selectedRole === 'designer') {
         navigate('/designer/onboarding');
       } else {
         navigate('/customer');

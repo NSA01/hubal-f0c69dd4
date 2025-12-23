@@ -17,6 +17,36 @@ export function useAuth() {
   const [role, setRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching role:', error);
+        setRole(null);
+        setLoading(false);
+        return;
+      }
+      
+      setRole((data?.role as UserRole) || null);
+    } catch (err) {
+      console.error('Error fetching role:', err);
+      setRole(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refetchRole = async () => {
+    if (user) {
+      await fetchUserRole(user.id);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -51,31 +81,6 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching role:', error);
-        // Don't fail silently - still set loading to false
-        setRole(null);
-        setLoading(false);
-        return;
-      }
-      
-      setRole((data?.role as UserRole) || null);
-    } catch (err) {
-      console.error('Error fetching role:', err);
-      setRole(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const signOut = async () => {
     setLoading(true);
     await supabase.auth.signOut();
@@ -92,5 +97,6 @@ export function useAuth() {
     loading,
     isAuthenticated: !!session,
     signOut,
+    refetchRole,
   };
 }
