@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Home, Wand2, Users, MessageCircle, FileText, Rocket } from 'lucide-react';
+import { Home, Wand2, Users, MessageCircle, FileText } from 'lucide-react';
+import { audio } from '@/lib/feedback';
 
 const ONBOARDING_KEY = 'customer_onboarding_completed';
 
@@ -72,30 +73,36 @@ export function useOnboarding() {
   const startOnboarding = useCallback(() => {
     setCurrentStepIndex(0);
     setPhase('welcome');
+    audio.whoosh();
   }, []);
 
   const beginTour = useCallback(() => {
     setPhase('tour');
+    audio.pop();
   }, []);
 
   const nextStep = useCallback(() => {
     if (isLastStep) {
       setPhase('complete');
+      audio.success();
       setTimeout(() => {
         completeOnboarding();
       }, 2500);
     } else {
       setCurrentStepIndex((prev) => prev + 1);
+      audio.pop();
     }
   }, [isLastStep]);
 
   const prevStep = useCallback(() => {
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
+      audio.click();
     }
   }, [currentStepIndex]);
 
   const skipOnboarding = useCallback(() => {
+    audio.click();
     completeOnboarding();
   }, []);
 
