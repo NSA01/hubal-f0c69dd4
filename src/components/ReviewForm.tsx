@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Star, Send, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Star, Send, Loader2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCreateReview } from '@/hooks/useReviews';
+import { useCreateReview, useUpdateReview, useExistingReview } from '@/hooks/useReviews';
 import { toast } from 'sonner';
 
 interface ReviewFormProps {
@@ -21,6 +21,17 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState('');
   const createReview = useCreateReview();
+  const updateReview = useUpdateReview();
+  const { data: existingReview, isLoading: isLoadingExisting } = useExistingReview(designerId);
+
+  const isEditing = !!existingReview;
+
+  useEffect(() => {
+    if (existingReview) {
+      setRating(existingReview.rating);
+      setComment(existingReview.comment || '');
+    }
+  }, [existingReview]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,16 +42,23 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
     }
 
     try {
-      await createReview.mutateAsync({
-        designerId,
-        serviceRequestId,
-        rating,
-        comment: comment.trim() || undefined,
-      });
-
-      toast.success('تم إرسال التقييم بنجاح');
-      setRating(0);
-      setComment('');
+      if (isEditing && existingReview) {
+        await updateReview.mutateAsync({
+          reviewId: existingReview.id,
+          designerId,
+          rating,
+          comment: comment.trim() || undefined,
+        });
+        toast.success('تم تحديث التقييم بنجاح');
+      } else {
+        await createReview.mutateAsync({
+          designerId,
+          serviceRequestId,
+          rating,
+          comment: comment.trim() || undefined,
+        });
+        toast.success('تم إرسال التقييم بنجاح');
+      }
       onSuccess?.();
     } catch (error: any) {
       if (error?.code === '23505') {
@@ -51,10 +69,31 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
     }
   };
 
+  const isPending = createReview.isPending || updateReview.isPending;
+
+  if (isLoadingExisting) {
+    return (
+      <Card>
+        <CardContent className="py-8 flex justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">تقييم المصمم</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">
+          {isEditing ? (
+            <>
+              <Edit className="h-5 w-5" />
+              تعديل التقييم
+            </>
+          ) : (
+            'تقييم المصمم'
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -107,17 +146,17 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
           <Button
             type="submit"
             className="w-full"
-            disabled={rating === 0 || createReview.isPending}
+            disabled={rating === 0 || isPending}
           >
-            {createReview.isPending ? (
+            {isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                جاري الإرسال...
+                {isEditing ? 'جاري التحديث...' : 'جاري الإرسال...'}
               </>
             ) : (
               <>
-                <Send className="h-4 w-4 ml-2" />
-                إرسال التقييم
+                {isEditing ? <Edit className="h-4 w-4 ml-2" /> : <Send className="h-4 w-4 ml-2" />}
+                {isEditing ? 'تحديث التقييم' : 'إرسال التقييم'}
               </>
             )}
           </Button>

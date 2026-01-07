@@ -88,7 +88,71 @@ export function useCreateReview() {
       queryClient.invalidateQueries({ queryKey: ['designer-reviews', variables.designerId] });
       queryClient.invalidateQueries({ queryKey: ['customer-requests'] });
       queryClient.invalidateQueries({ queryKey: ['designers'] });
+      queryClient.invalidateQueries({ queryKey: ['existing-review', variables.designerId] });
+      queryClient.invalidateQueries({ queryKey: ['has-reviewed', variables.designerId] });
     },
+  });
+}
+
+export function useUpdateReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      reviewId,
+      designerId,
+      rating,
+      comment,
+    }: {
+      reviewId: string;
+      designerId: string;
+      rating: number;
+      comment?: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('reviews')
+        .update({
+          rating,
+          comment: comment?.trim() || null,
+        })
+        .eq('id', reviewId)
+        .eq('customer_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['designer-reviews', variables.designerId] });
+      queryClient.invalidateQueries({ queryKey: ['customer-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['designers'] });
+      queryClient.invalidateQueries({ queryKey: ['existing-review', variables.designerId] });
+      queryClient.invalidateQueries({ queryKey: ['has-reviewed', variables.designerId] });
+    },
+  });
+}
+
+export function useExistingReview(designerId?: string) {
+  return useQuery({
+    queryKey: ['existing-review', designerId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !designerId) return null;
+
+      const { data } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('designer_id', designerId)
+        .eq('customer_id', user.id)
+        .maybeSingle();
+
+      return data as Review | null;
+    },
+    enabled: !!designerId,
   });
 }
 
