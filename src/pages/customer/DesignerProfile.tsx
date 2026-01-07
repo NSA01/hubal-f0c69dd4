@@ -1,16 +1,37 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, MapPin, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, MapPin, CheckCircle, Loader2, MessageCircle } from 'lucide-react';
 import { StarRating } from '@/components/ui/StarRating';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { useDesigner } from '@/hooks/useDesigners';
 import { useDesignerReviews } from '@/hooks/useReviews';
+import { useCreateConversation } from '@/hooks/useChat';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DesignerProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const { data: designer, isLoading } = useDesigner(id || '');
   const { data: designerReviews = [] } = useDesignerReviews(id);
+  const createConversation = useCreateConversation();
+
+  const handleStartChat = async () => {
+    if (!designer) return;
+    
+    try {
+      const conversation = await createConversation.mutateAsync({
+        designerId: designer.id,
+      });
+      navigate(`/customer/chat/${conversation.id}`);
+    } catch (error) {
+      toast({
+        title: 'حدث خطأ',
+        description: 'فشل في فتح المحادثة',
+        variant: 'destructive',
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -157,11 +178,19 @@ export default function DesignerProfile() {
         )}
       </section>
 
-      {/* CTA Button */}
-      <div className="fixed bottom-20 left-4 right-4 z-40">
+      {/* CTA Buttons */}
+      <div className="fixed bottom-20 left-4 right-4 z-40 flex gap-3">
+        <button
+          onClick={handleStartChat}
+          disabled={createConversation.isPending}
+          className="flex-1 btn-secondary py-4 text-lg flex items-center justify-center gap-2"
+        >
+          <MessageCircle className="w-5 h-5" />
+          محادثة
+        </button>
         <button
           onClick={() => navigate(`/customer/request/${designer.id}`)}
-          className="w-full btn-primary py-4 text-lg"
+          className="flex-1 btn-primary py-4 text-lg"
         >
           طلب تصميم
         </button>

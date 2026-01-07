@@ -94,7 +94,7 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
     }
   };
 
-  const showChatButton = request.status === 'accepted' && variant === 'customer';
+  const showChatButton = (request.status === 'accepted' || request.status === 'pending') && request.designerId;
   const showReviewButton = request.status === 'completed' && variant === 'customer' && request.designerId && !hasReviewed;
 
   return (
@@ -158,10 +158,18 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
       {showActions && request.status === 'pending' && onAccept && onReject && (
         <div className="flex gap-3 pt-2">
           <button
+            onClick={handleStartChat}
+            disabled={createConversation.isPending}
+            className="btn-secondary py-2.5 text-sm rounded-xl flex items-center justify-center gap-2 px-4"
+          >
+            <MessageCircle className="w-4 h-4" />
+            محادثة
+          </button>
+          <button
             onClick={() => onAccept?.(request.id)}
             className="flex-1 btn-primary py-2.5 text-sm rounded-xl"
           >
-            قبول الطلب
+            قبول
           </button>
           <button
             onClick={() => onReject?.(request.id)}
@@ -176,6 +184,14 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
       {showActions && request.status === 'accepted' && onComplete && (
         <div className="flex gap-3 pt-2">
           <button
+            onClick={handleStartChat}
+            disabled={createConversation.isPending}
+            className="btn-secondary py-2.5 text-sm rounded-xl flex items-center justify-center gap-2 px-4"
+          >
+            <MessageCircle className="w-4 h-4" />
+            محادثة
+          </button>
+          <button
             onClick={() => onComplete?.(request.id)}
             className="flex-1 btn-primary py-2.5 text-sm rounded-xl"
           >
@@ -184,15 +200,15 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
         </div>
       )}
 
-      {/* Chat Button for accepted requests */}
-      {showChatButton && (
+      {/* Chat Button for customer view on accepted/pending requests */}
+      {showChatButton && !showActions && (
         <button
           onClick={handleStartChat}
           disabled={createConversation.isPending}
-          className="w-full btn-primary py-2.5 text-sm rounded-xl flex items-center justify-center gap-2 mt-2"
+          className="w-full btn-secondary py-2.5 text-sm rounded-xl flex items-center justify-center gap-2 mt-2"
         >
           <MessageCircle className="w-4 h-4" />
-          بدء المحادثة
+          محادثة مع المصمم
         </button>
       )}
 
