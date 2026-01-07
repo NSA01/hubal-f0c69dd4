@@ -20,9 +20,13 @@ export interface DesignOffer {
   price: number;
   message: string | null;
   estimated_days: number | null;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'counter_offer';
   created_at: string;
   updated_at: string;
+  counter_price: number | null;
+  counter_message: string | null;
+  counter_estimated_days: number | null;
+  counter_created_at: string | null;
   designer?: {
     id: string;
     business_name: string | null;
@@ -34,6 +38,7 @@ export interface DesignOffer {
       avatar_url: string | null;
     };
   };
+  room_design?: RoomDesign;
 }
 
 export function useRoomDesigns() {
@@ -209,7 +214,7 @@ export function useUpdateOfferStatus() {
       status,
     }: {
       offerId: string;
-      status: 'accepted' | 'rejected';
+      status: 'accepted' | 'rejected' | 'counter_offer';
     }) => {
       const { data, error } = await supabase
         .from('design_offers')
@@ -223,6 +228,80 @@ export function useUpdateOfferStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['design-offers'] });
+      queryClient.invalidateQueries({ queryKey: ['my-design-offers'] });
+    },
+  });
+}
+
+export function useSubmitCounterOffer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      offerId,
+      counterPrice,
+      counterMessage,
+      counterEstimatedDays,
+    }: {
+      offerId: string;
+      counterPrice: number;
+      counterMessage?: string;
+      counterEstimatedDays?: number;
+    }) => {
+      const { data, error } = await supabase
+        .from('design_offers')
+        .update({
+          status: 'counter_offer',
+          counter_price: counterPrice,
+          counter_message: counterMessage || null,
+          counter_estimated_days: counterEstimatedDays || null,
+          counter_created_at: new Date().toISOString(),
+        })
+        .eq('id', offerId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['design-offers'] });
+      queryClient.invalidateQueries({ queryKey: ['my-design-offers'] });
+    },
+  });
+}
+
+export function useAcceptCounterOffer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (offerId: string) => {
+      // Get the offer to update price with counter price
+      const { data: offer, error: fetchError } = await supabase
+        .from('design_offers')
+        .select('counter_price, counter_estimated_days')
+        .eq('id', offerId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const { data, error } = await supabase
+        .from('design_offers')
+        .update({
+          status: 'accepted',
+          price: offer.counter_price || undefined,
+          estimated_days: offer.counter_estimated_days || undefined,
+        })
+        .eq('id', offerId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['design-offers'] });
+      queryClient.invalidateQueries({ queryKey: ['my-design-offers'] });
     },
   });
 }
