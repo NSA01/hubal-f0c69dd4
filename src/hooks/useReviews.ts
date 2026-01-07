@@ -92,24 +92,21 @@ export function useCreateReview() {
   });
 }
 
-export function useHasReviewed(designerId?: string, serviceRequestId?: string) {
+export function useHasReviewed(designerId?: string) {
   return useQuery({
-    queryKey: ['has-reviewed', designerId, serviceRequestId],
+    queryKey: ['has-reviewed', designerId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !designerId) return false;
 
-      let query = supabase
+      // Check if customer already reviewed this designer (unique constraint: customer_id + designer_id)
+      const { data } = await supabase
         .from('reviews')
         .select('id')
         .eq('designer_id', designerId)
-        .eq('customer_id', user.id);
+        .eq('customer_id', user.id)
+        .maybeSingle();
 
-      if (serviceRequestId) {
-        query = query.eq('service_request_id', serviceRequestId);
-      }
-
-      const { data } = await query.maybeSingle();
       return !!data;
     },
     enabled: !!designerId,
