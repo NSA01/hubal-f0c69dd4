@@ -1,8 +1,11 @@
 import { useAuthContext } from '@/contexts/AuthContext';
 import { CategoryCard } from '@/components/CategoryCard';
 import { BottomNav } from '@/components/ui/BottomNav';
-import { Sparkles, Wand2 } from 'lucide-react';
+import { Sparkles, Wand2, HelpCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { OnboardingTooltip } from '@/components/OnboardingTooltip';
+import { Button } from '@/components/ui/button';
 
 const categories = [
   {
@@ -14,18 +17,55 @@ const categories = [
     isActive: true,
   },
 ];
-
 export default function CustomerHome() {
   const { user } = useAuthContext();
+  const {
+    isOnboardingActive,
+    currentStep,
+    currentStepIndex,
+    totalSteps,
+    isLastStep,
+    hasCompletedOnboarding,
+    startOnboarding,
+    nextStep,
+    prevStep,
+    skipOnboarding,
+  } = useOnboarding();
 
   return (
     <div className="page-container">
+      {/* Onboarding Tooltip */}
+      {isOnboardingActive && currentStep && (
+        <OnboardingTooltip
+          step={currentStep}
+          currentIndex={currentStepIndex}
+          totalSteps={totalSteps}
+          isLastStep={isLastStep}
+          onNext={nextStep}
+          onPrev={prevStep}
+          onSkip={skipOnboarding}
+        />
+      )}
+
       {/* Header */}
-      <header className="mb-8 animate-fade-in">
-        <p className="text-muted-foreground mb-1">أهلاً بك،</p>
-        <h1 className="text-2xl font-bold text-foreground">
-          {user?.user_metadata?.name || user?.email?.split('@')[0] || 'ضيف'}
-        </h1>
+      <header className="mb-8 animate-fade-in flex items-start justify-between">
+        <div>
+          <p className="text-muted-foreground mb-1">أهلاً بك،</p>
+          <h1 className="text-2xl font-bold text-foreground">
+            {user?.user_metadata?.name || user?.email?.split('@')[0] || 'ضيف'}
+          </h1>
+        </div>
+        {hasCompletedOnboarding && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={startOnboarding}
+            className="text-muted-foreground hover:text-primary"
+            title="إعادة الجولة التعريفية"
+          >
+            <HelpCircle className="w-5 h-5" />
+          </Button>
+        )}
       </header>
 
       {/* Main Content */}
@@ -35,7 +75,7 @@ export default function CustomerHome() {
           اكتشف أفضل المصممين في المملكة
         </p>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4" data-onboarding="category">
           {categories.map((category) => (
             <CategoryCard key={category.id} category={category} />
           ))}
@@ -43,7 +83,7 @@ export default function CustomerHome() {
       </section>
 
       {/* AI Room Design Feature */}
-      <section className="mt-8 animate-slide-up" style={{ animationDelay: '0.15s' }}>
+      <section className="mt-8 animate-slide-up" style={{ animationDelay: '0.15s' }} data-onboarding="ai-design">
         <Link to="/customer/room-design">
           <div className="card-premium p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 hover:border-primary/40 transition-all cursor-pointer">
             <div className="flex items-center gap-4">

@@ -3,19 +3,19 @@ import { Home, Search, FileText, User, LayoutGrid, MessageSquare, Star, MessageC
 import { useAuthContext } from '@/contexts/AuthContext';
 
 const customerNavItems = [
-  { icon: Home, label: 'الرئيسية', path: '/customer' },
-  { icon: Search, label: 'المصممين', path: '/customer/designers' },
-  { icon: MessageCircle, label: 'الرسائل', path: '/customer/messages' },
-  { icon: FileText, label: 'طلباتي', path: '/customer/requests' },
-  { icon: User, label: 'حسابي', path: '/customer/profile' },
+  { icon: Home, label: 'الرئيسية', path: '/customer', onboardingId: 'nav-home' },
+  { icon: Search, label: 'المصممين', path: '/customer/designers', onboardingId: 'nav-designers' },
+  { icon: MessageCircle, label: 'الرسائل', path: '/customer/messages', onboardingId: 'nav-messages' },
+  { icon: FileText, label: 'طلباتي', path: '/customer/requests', onboardingId: 'nav-requests' },
+  { icon: User, label: 'حسابي', path: '/customer/profile', onboardingId: 'nav-profile' },
 ];
 
 const designerNavItems = [
-  { icon: LayoutGrid, label: 'لوحة التحكم', path: '/designer' },
-  { icon: MessageSquare, label: 'الطلبات', path: '/designer/requests' },
-  { icon: MessageCircle, label: 'الرسائل', path: '/designer/messages' },
-  { icon: Star, label: 'التقييمات', path: '/designer/reviews' },
-  { icon: User, label: 'ملفي', path: '/designer/profile' },
+  { icon: LayoutGrid, label: 'لوحة التحكم', path: '/designer', onboardingId: 'nav-dashboard' },
+  { icon: MessageSquare, label: 'الطلبات', path: '/designer/requests', onboardingId: 'nav-requests' },
+  { icon: MessageCircle, label: 'الرسائل', path: '/designer/messages', onboardingId: 'nav-messages' },
+  { icon: Star, label: 'التقييمات', path: '/designer/reviews', onboardingId: 'nav-reviews' },
+  { icon: User, label: 'ملفي', path: '/designer/profile', onboardingId: 'nav-profile' },
 ];
 
 export function BottomNav() {
@@ -37,6 +37,7 @@ export function BottomNav() {
               key={item.path}
               to={item.path}
               className={`nav-item flex-1 ${isActive ? 'active' : ''}`}
+              data-onboarding={item.onboardingId}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'scale-110' : ''} transition-transform`} />
               <span className="text-[10px] font-medium">{item.label}</span>
