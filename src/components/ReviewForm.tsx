@@ -42,8 +42,12 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
       setRating(0);
       setComment('');
       onSuccess?.();
-    } catch (error) {
-      toast.error('حدث خطأ أثناء إرسال التقييم');
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        toast.error('لقد قمت بتقييم هذا المصمم مسبقاً');
+      } else {
+        toast.error('حدث خطأ أثناء إرسال التقييم');
+      }
     }
   };
 

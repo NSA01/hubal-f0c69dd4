@@ -57,7 +57,7 @@ export function RequestCard({ request, showActions = false, onAccept, onReject, 
   const PropertyIcon = propertyIcons[request.propertyType] || Home;
   const navigate = useNavigate();
   const createConversation = useCreateConversation();
-  const { data: hasReviewed } = useHasReviewed(request.designerId, request.id);
+  const { data: hasReviewed } = useHasReviewed(request.designerId);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   
   const formatBudget = (budget: number) => {
