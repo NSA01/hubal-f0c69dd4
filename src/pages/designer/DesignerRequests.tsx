@@ -9,7 +9,7 @@ import { useDesignerRequests, useUpdateRequestStatus } from '@/hooks/useServiceR
 import { useAvailableRoomDesigns, useMyDesignOffers } from '@/hooks/useRoomDesigns';
 import { useCreateConversation } from '@/hooks/useChat';
 import { SendOfferForm } from '@/components/SendOfferForm';
-import { Loader2, Image, Calendar, Send } from 'lucide-react';
+import { Loader2, Image, Calendar, Send, MessageCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -74,6 +74,19 @@ export default function DesignerRequests() {
       toast.info('تم رفض الطلب');
     } catch (error) {
       toast.error('حدث خطأ');
+    }
+  };
+
+  const handleStartChat = async (customerId: string) => {
+    try {
+      if (!designer) return;
+      const conversation = await createConversation.mutateAsync({
+        designerId: designer.id,
+        customerId: customerId,
+      });
+      navigate(`/designer/chat/${conversation.id}`);
+    } catch (error) {
+      toast.error('فشل في فتح المحادثة');
     }
   };
 
@@ -171,14 +184,25 @@ export default function DesignerRequests() {
                           {design.prompt}
                         </p>
                         
-                        <Button
-                          size="sm"
-                          onClick={() => handleOpenOffer(design)}
-                          className="gap-2"
-                        >
-                          <Send className="w-4 h-4" />
-                          إرسال عرض سعر
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleStartChat(design.user_id)}
+                            className="gap-2"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            محادثة
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleOpenOffer(design)}
+                            className="gap-2"
+                          >
+                            <Send className="w-4 h-4" />
+                            إرسال عرض
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

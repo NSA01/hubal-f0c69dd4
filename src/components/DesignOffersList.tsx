@@ -204,6 +204,15 @@ const OfferCard: React.FC<OfferCardProps> = ({ offer, onAccept, onReject, onStar
                 <div className="flex gap-2">
                   <Button
                     size="sm"
+                    variant="ghost"
+                    onClick={onStartChat}
+                    disabled={isUpdating}
+                  >
+                    <MessageCircle className="h-4 w-4 ml-1" />
+                    محادثة
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={onReject}
                     disabled={isUpdating}
