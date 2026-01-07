@@ -81,6 +81,10 @@ export type Database = {
       }
       design_offers: {
         Row: {
+          counter_created_at: string | null
+          counter_estimated_days: number | null
+          counter_message: string | null
+          counter_price: number | null
           created_at: string
           designer_id: string
           estimated_days: number | null
@@ -92,6 +96,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          counter_created_at?: string | null
+          counter_estimated_days?: number | null
+          counter_message?: string | null
+          counter_price?: number | null
           created_at?: string
           designer_id: string
           estimated_days?: number | null
@@ -103,6 +111,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          counter_created_at?: string | null
+          counter_estimated_days?: number | null
+          counter_message?: string | null
+          counter_price?: number | null
           created_at?: string
           designer_id?: string
           estimated_days?: number | null
@@ -226,6 +238,39 @@ export type Database = {
           is_read?: boolean
           receiver_id?: string
           sender_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
