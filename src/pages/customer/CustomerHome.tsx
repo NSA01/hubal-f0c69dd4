@@ -5,7 +5,15 @@ import { Sparkles, Wand2, HelpCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingTooltip } from '@/components/OnboardingTooltip';
+import { WelcomeModal } from '@/components/WelcomeModal';
+import { CompletionCelebration } from '@/components/CompletionCelebration';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const categories = [
   {
@@ -17,9 +25,11 @@ const categories = [
     isActive: true,
   },
 ];
+
 export default function CustomerHome() {
   const { user } = useAuthContext();
   const {
+    phase,
     isOnboardingActive,
     currentStep,
     currentStepIndex,
@@ -27,6 +37,7 @@ export default function CustomerHome() {
     isLastStep,
     hasCompletedOnboarding,
     startOnboarding,
+    beginTour,
     nextStep,
     prevStep,
     skipOnboarding,
@@ -34,6 +45,11 @@ export default function CustomerHome() {
 
   return (
     <div className="page-container">
+      {/* Welcome Modal */}
+      {phase === 'welcome' && (
+        <WelcomeModal onStart={beginTour} onSkip={skipOnboarding} />
+      )}
+
       {/* Onboarding Tooltip */}
       {isOnboardingActive && currentStep && (
         <OnboardingTooltip
@@ -47,6 +63,9 @@ export default function CustomerHome() {
         />
       )}
 
+      {/* Completion Celebration */}
+      {phase === 'complete' && <CompletionCelebration />}
+
       {/* Header */}
       <header className="mb-8 animate-fade-in flex items-start justify-between">
         <div>
@@ -56,15 +75,23 @@ export default function CustomerHome() {
           </h1>
         </div>
         {hasCompletedOnboarding && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={startOnboarding}
-            className="text-muted-foreground hover:text-primary"
-            title="إعادة الجولة التعريفية"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={startOnboarding}
+                  className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                >
+                  <HelpCircle className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>إعادة الجولة التعريفية</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </header>
 

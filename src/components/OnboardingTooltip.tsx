@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { OnboardingStep } from '@/hooks/useOnboarding';
 
 interface OnboardingTooltipProps {
@@ -26,6 +26,7 @@ export function OnboardingTooltip({
   const [isVisible, setIsVisible] = useState(false);
   const [arrowPosition, setArrowPosition] = useState<'top' | 'bottom' | 'left' | 'right'>('bottom');
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const StepIcon = step.icon;
 
   useEffect(() => {
     setIsVisible(false);
@@ -112,7 +113,7 @@ export function OnboardingTooltip({
     <>
       {/* Overlay with fade animation */}
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[998] animate-fade-in" 
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[998]" 
         onClick={onSkip} 
       />
 
@@ -120,7 +121,7 @@ export function OnboardingTooltip({
       <div
         ref={tooltipRef}
         className={`fixed z-[999] w-80 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 ease-out ${
-          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+          isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
         }`}
         style={{ top: position.top, left: position.left }}
       >
@@ -128,15 +129,15 @@ export function OnboardingTooltip({
         <div className={getArrowStyles()} />
 
         {/* Header with gradient */}
-        <div className="bg-gradient-to-l from-primary/10 to-primary/5 px-5 py-4 border-b border-border/50">
+        <div className="bg-gradient-to-l from-primary/15 to-primary/5 px-5 py-4 border-b border-border/50">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shadow-sm">
+                <StepIcon className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <span className="text-xs text-muted-foreground">جولة تعريفية</span>
-                <h3 className="font-bold text-foreground text-sm">{step.title}</h3>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">خطوة {currentIndex + 1} من {totalSteps}</span>
+                <h3 className="font-bold text-foreground">{step.title}</h3>
               </div>
             </div>
             <button
@@ -157,42 +158,48 @@ export function OnboardingTooltip({
         </div>
 
         {/* Footer with navigation */}
-        <div className="px-5 py-4 bg-muted/30 border-t border-border/50">
+        <div className="px-5 py-4 bg-muted/20 border-t border-border/50">
           {/* Progress bar */}
-          <div className="flex gap-1 mb-4">
+          <div className="flex gap-1.5 mb-4">
             {Array.from({ length: totalSteps }).map((_, i) => (
               <div
                 key={i}
-                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                  i <= currentIndex ? 'bg-primary' : 'bg-muted'
+                className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
+                  i < currentIndex 
+                    ? 'bg-primary' 
+                    : i === currentIndex 
+                      ? 'bg-primary animate-pulse' 
+                      : 'bg-muted'
                 }`}
               />
             ))}
           </div>
 
           {/* Navigation buttons */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={onPrev}
               disabled={currentIndex === 0}
-              className="text-muted-foreground hover:text-foreground gap-1"
+              className="text-muted-foreground hover:text-foreground gap-1 disabled:opacity-30"
             >
               <ChevronRight className="w-4 h-4" />
               السابق
             </Button>
 
-            <span className="text-xs text-muted-foreground font-medium">
-              {currentIndex + 1} من {totalSteps}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-muted-foreground">
+                اضغط ← للتالي
+              </span>
+            </div>
 
             <Button 
               size="sm" 
               onClick={onNext} 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-1 shadow-md"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground gap-1 shadow-md min-w-[100px]"
             >
-              {isLastStep ? 'ابدأ الآن' : 'التالي'}
+              {isLastStep ? 'إنهاء' : 'التالي'}
               {!isLastStep && <ChevronLeft className="w-4 h-4" />}
             </Button>
           </div>
